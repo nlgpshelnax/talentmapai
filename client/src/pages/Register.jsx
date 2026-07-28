@@ -1,31 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Sparkles, ArrowLeft, Users, User, MapPin, Check } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Sparkles, UserPlus } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import api, { errorMessage } from '../lib/api';
-import { Button, Field, Input, Alert, cx, inputClass } from '../components/ui';
+import { Alert, Button, Field, Input, cx } from '../components/ui';
 
-const ROLES = [
-  { value: 'parent', label: 'Родитель', hint: 'ребёнку 6–14', Icon: Users },
-  { value: 'child', label: 'Подросток', hint: '12–18 лет', Icon: User },
-];
+/**
+ * Registration asks the bare minimum: name, email, password.
+ *
+ * It deliberately does NOT ask for role, age or city. Those belong further
+ * down the funnel — the role is chosen on the onboarding screen (ТЗ 3.1), and
+ * age and city are two of the twelve diagnostic questions (ТЗ 3.2). Collecting
+ * them here as well meant the app asked the same three things twice, which is
+ * exactly the kind of friction that makes people abandon a sign-up.
+ */
 
-/** Live password strength: 0 too short, 1 ok, 2 good, 3 strong. */
-function passwordScore(pw) {
-  if (pw.length < 8) return 0;
+const MIN_PASSWORD = 8;
+
+/** Live password strength: 1 weak, 2 fair, 3 strong. */
+function passwordStrength(value) {
+  if (!value) return { score: 0, label: '', tone: '' };
+  if (value.length < MIN_PASSWORD) return { score: 1, label: 'Слишком короткий', tone: 'weak' };
+
   let score = 1;
-  if (pw.length >= 12) score += 1;
-  if (/[a-zа-яё]/i.test(pw) && /\d/.test(pw)) score += 1;
-  return Math.min(score, 3);
-}
+  if (value.length >= 12) score += 1;
+  if (/[^A-Za-zА-Яа-яЁё0-9]/.test(value) || (/[A-Za-zА-Яа-яЁё]/.test(value) && /\d/.test(value))) score += 1;
 
-const STRENGTH = [
-  { label: 'Минимум 8 символов', tone: 'text-slate-500', bar: 'bg-slate-600' },
-  { label: 'Нормальный пароль', tone: 'text-gold-300', bar: 'bg-gold-500' },
-  { label: 'Хороший пароль', tone: 'text-gold-300', bar: 'bg-gold-400' },
-  { label: 'Надёжный пароль', tone: 'text-emerald-300', bar: 'bg-emerald-400' },
-];
+  if (score === 1) return { score: 1, label: 'Простой', tone: 'weak' };
+  if (score === 2) return { score: 2, label: 'Неплохой', tone: 'mid' };
+  return { score: 3, label: 'Надёжный', tone: 'strong' };
+}
 
 export default function Register() {
   const { login } = useAuth();
@@ -35,145 +40,42 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('parent');
-  const [age, setAge] = useState('');
-  const [city, setCity] = useState('');
-
-  const [errors, setErrors] = useState({});
-  const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [errors, setErrors] = useState({});
 
-  // --- City autocomplete state ---
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const cityBoxRef = useRef(null);
-  const suppressFetch = useRef(false);
-
-  const score = passwordScore(password);
-
-  // Debounced, cleanup-guarded city lookup. All state updates happen inside the
-  // async timer callback — never synchronously in the effect body — so React
-  // doesn't warn about cascading renders.
-  useEffect(() => {
-    const query = city.trim();
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const timer = setTimeout(() => {
-      // A suggestion was just chosen — swallow this one lookup, keep the list closed.
-      if (suppressFetch.current) {
-        suppressFetch.current = false;
-        return;
-      }
-      if (query.length < 2) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-      api
-        .get('/diagnostics/cities', { params: { q: query }, signal: controller.signal })
-        .then((res) => {
-          if (cancelled) return;
-          const list = Array.isArray(res.data?.cities) ? res.data.cities : [];
-          setSuggestions(list);
-          setShowSuggestions(list.length > 0);
-          setActiveIndex(-1);
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setSuggestions([]);
-            setShowSuggestions(false);
-          }
-        });
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [city]);
-
-  // Close the dropdown on outside click.
-  useEffect(() => {
-    function onDocClick(e) {
-      if (cityBoxRef.current && !cityBoxRef.current.contains(e.target)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
-
-  function pickCity(value) {
-    suppressFetch.current = true;
-    setCity(value);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-  }
-
-  function onCityKeyDown(e) {
-    if (!showSuggestions || suggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((i) => (i + 1) % suggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-    } else if (e.key === 'Enter') {
-      if (activeIndex >= 0) {
-        e.preventDefault();
-        pickCity(suggestions[activeIndex]);
-      }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-      setActiveIndex(-1);
-    }
-  }
+  const strength = useMemo(() => passwordStrength(password), [password]);
 
   function validate() {
     const next = {};
-    if (name.trim().length < 2) next.name = 'Имя должно содержать минимум 2 символа.';
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'Введите корректный адрес почты.';
-    if (password.length < 8) next.password = 'Пароль должен содержать минимум 8 символов.';
-    if (age !== '') {
-      const n = Number(age);
-      if (!Number.isInteger(n) || n < 3 || n > 18) {
-        next.age = 'Возраст должен быть от 3 до 18 лет.';
-      }
-    }
+    if (name.trim().length < 2) next.name = 'Имя должно быть не короче 2 символов.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) next.email = 'Проверьте адрес почты.';
+    if (password.length < MIN_PASSWORD) next.password = `Пароль должен быть не короче ${MIN_PASSWORD} символов.`;
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (submitting) return;
-    setFormError('');
-    if (!validate()) return;
+    if (submitting || !validate()) return;
 
     setSubmitting(true);
+    setFormError('');
     try {
-      const payload = {
+      const res = await api.post('/auth/register', {
         name: name.trim(),
         email: email.trim(),
         password,
-        role,
-      };
-      if (age !== '') payload.age = Number(age);
-      if (city.trim()) payload.city = city.trim();
-
-      const res = await api.post('/auth/register', payload);
-      const { token, user } = res.data;
-      login(token, user);
-      navigate(user?.onboarded ? '/app' : '/onboarding', { replace: true });
+      });
+      login(res.data.token, res.data.user);
+      navigate('/onboarding', { replace: true });
     } catch (err) {
       setFormError(errorMessage(err, 'Не удалось создать аккаунт. Попробуйте ещё раз.'));
       setSubmitting(false);
     }
   }
+
+  const strengthColour = { weak: 'bg-rose-500', mid: 'bg-gold-400', strong: 'bg-emerald-500' }[strength.tone];
 
   return (
     <main className="space-gradient flex min-h-screen flex-col items-center justify-center px-4 py-12">
@@ -181,16 +83,14 @@ export default function Register() {
         <div className="mb-8 text-center">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-xl font-display font-extrabold text-white transition hover:text-gold-300"
+            className="inline-flex items-center gap-2 font-display text-xl font-extrabold text-white transition hover:text-gold-300"
           >
             <Sparkles size={22} className="text-gold-400" aria-hidden="true" />
             TalentMap&nbsp;AI
           </Link>
-          <h1 className="mt-6 text-3xl font-extrabold text-white text-balance">
-            Постройте карту таланта
-          </h1>
+          <h1 className="mt-6 text-3xl font-extrabold text-white">Создайте карту таланта</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Регистрация займёт минуту&nbsp;— и можно начинать диагностику.
+            Три поля — и переходим к диагностике. Она займёт около трёх минут.
           </p>
         </div>
 
@@ -201,10 +101,9 @@ export default function Register() {
             <Field label="Имя" htmlFor="reg-name" required error={errors.name}>
               <Input
                 id="reg-name"
-                type="text"
                 name="name"
                 autoComplete="name"
-                placeholder="Как вас зовут?"
+                placeholder="Как к вам обращаться"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={submitting}
@@ -229,14 +128,20 @@ export default function Register() {
               />
             </Field>
 
-            <Field label="Пароль" htmlFor="reg-password" required error={errors.password}>
+            <Field
+              label="Пароль"
+              htmlFor="reg-password"
+              required
+              error={errors.password}
+              hint={`Минимум ${MIN_PASSWORD} символов`}
+            >
               <div className="relative">
                 <Input
                   id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   autoComplete="new-password"
-                  placeholder="Минимум 8 символов"
+                  placeholder="Придумайте пароль"
                   className="pr-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -255,144 +160,33 @@ export default function Register() {
                   {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                 </button>
               </div>
-              {password.length > 0 && (
-                <div id="reg-password-strength" className="mt-2">
-                  <div className="flex gap-1" aria-hidden="true">
-                    {[0, 1, 2].map((i) => (
+
+              {password && (
+                <div id="reg-password-strength" className="mt-2 flex items-center gap-2">
+                  <div className="flex flex-1 gap-1" aria-hidden="true">
+                    {[1, 2, 3].map((level) => (
                       <span
-                        key={i}
+                        key={level}
                         className={cx(
                           'h-1 flex-1 rounded-full transition-colors',
-                          i < score ? STRENGTH[score].bar : 'bg-white/10'
+                          strength.score >= level ? strengthColour : 'bg-white/12'
                         )}
                       />
                     ))}
                   </div>
-                  <p className={cx('mt-1.5 text-xs', STRENGTH[score].tone)}>{STRENGTH[score].label}</p>
+                  <span className="text-xs text-slate-400">{strength.label}</span>
                 </div>
               )}
             </Field>
 
-            <Field label="Кто вы?" required>
-              <div
-                role="radiogroup"
-                aria-label="Роль"
-                className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-space-800/50 p-1.5"
-              >
-                {ROLES.map(({ value, label, hint, Icon }) => {
-                  const selected = role === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setRole(value)}
-                      disabled={submitting}
-                      className={cx(
-                        'flex flex-col items-center gap-1 rounded-xl px-3 py-3 text-center transition',
-                        selected
-                          ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-space-950 shadow-lg shadow-gold-500/25'
-                          : 'text-slate-300 hover:bg-white/5'
-                      )}
-                    >
-                      <Icon size={20} aria-hidden="true" />
-                      <span className="text-sm font-semibold">{label}</span>
-                      <span className={cx('text-[11px]', selected ? 'text-space-900/80' : 'text-slate-500')}>
-                        {hint}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Возраст" htmlFor="reg-age" hint="Необязательно" error={errors.age}>
-                <Input
-                  id="reg-age"
-                  type="number"
-                  name="age"
-                  min={3}
-                  max={18}
-                  inputMode="numeric"
-                  placeholder="напр. 12"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  disabled={submitting}
-                  aria-invalid={Boolean(errors.age)}
-                />
-              </Field>
-
-              <Field label="Город" htmlFor="reg-city" hint="Необязательно">
-                <div className="relative" ref={cityBoxRef}>
-                  <div className="relative">
-                    <MapPin
-                      size={16}
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-                    />
-                    <input
-                      id="reg-city"
-                      type="text"
-                      name="city"
-                      autoComplete="address-level2"
-                      placeholder="Начните вводить…"
-                      className={cx(inputClass, 'pl-9')}
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      onKeyDown={onCityKeyDown}
-                      onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                      disabled={submitting}
-                      role="combobox"
-                      aria-expanded={showSuggestions}
-                      aria-controls="reg-city-list"
-                      aria-autocomplete="list"
-                      aria-activedescendant={
-                        activeIndex >= 0 ? `reg-city-option-${activeIndex}` : undefined
-                      }
-                    />
-                  </div>
-                  {showSuggestions && suggestions.length > 0 && (
-                    <ul
-                      id="reg-city-list"
-                      role="listbox"
-                      aria-label="Города"
-                      className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-white/12 bg-space-800 py-1 shadow-xl shadow-black/50"
-                    >
-                      {suggestions.map((item, i) => (
-                        <li
-                          key={item}
-                          id={`reg-city-option-${i}`}
-                          role="option"
-                          aria-selected={i === activeIndex}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            pickCity(item);
-                          }}
-                          onMouseEnter={() => setActiveIndex(i)}
-                          className={cx(
-                            'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition',
-                            i === activeIndex ? 'bg-gold-400/15 text-gold-200' : 'text-slate-200 hover:bg-white/5'
-                          )}
-                        >
-                          <MapPin size={14} aria-hidden="true" className="shrink-0 text-slate-500" />
-                          <span className="truncate">{item}</span>
-                          {i === activeIndex && (
-                            <Check size={14} aria-hidden="true" className="ml-auto shrink-0 text-gold-300" />
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </Field>
-            </div>
-
             <Button type="submit" size="lg" loading={submitting} className="w-full">
-              <Sparkles size={18} aria-hidden="true" />
-              Создать карту таланта
+              <UserPlus size={18} aria-hidden="true" />
+              Продолжить
             </Button>
+
+            <p className="text-center text-xs text-slate-500">
+              О возрасте, городе и интересах спросим на следующем шаге — там это нужно для подбора направлений.
+            </p>
           </form>
         </section>
 

@@ -17,6 +17,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Сколько лет ребёнку?',
+    questionSelf: 'Сколько тебе лет?',
     hint: 'Это поможет подобрать подходящую сложность',
     options: [
       { value: '3-6', label: '3–6 лет', icon: '🧸' },
@@ -30,6 +31,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Чем ребёнок больше всего любит заниматься в свободное время?',
+    questionSelf: 'Чем тебе больше всего нравится заниматься в свободное время?',
     options: [
       {
         value: 'draw',
@@ -62,6 +64,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Пробовали ли вы уже кружки по творчеству или технике?',
+    questionSelf: 'Ты уже ходил на кружки по творчеству или технике?',
     options: [
       { value: 'none', label: 'Нет, ничего', icon: '🌱', weights: {} },
       { value: 'art', label: 'Да, рисование или художественная школа', icon: '🖌️', weights: { art: 2, visual: 2 } },
@@ -74,6 +77,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Сколько времени в неделю готовы уделять развитию?',
+    questionSelf: 'Сколько времени в неделю ты готов уделять занятиям?',
     hint: 'Включая дорогу до занятий',
     options: [
       { value: '1-2 часа', label: '1–2 часа', icon: '🕐' },
@@ -87,6 +91,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Что для вас важнее?',
+    questionSelf: 'Что для тебя важнее?',
     options: [
       { value: 'fun', label: 'Чтобы ребёнок получал удовольствие', icon: '😊', weights: { play: 2, art: 1 } },
       { value: 'achievements', label: 'Чтобы были достижения: грамоты, олимпиады', icon: '🏆', weights: { structure: 2, precision: 2 } },
@@ -98,6 +103,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'choice',
     question: 'Что вас сейчас беспокоит больше всего?',
+    questionSelf: 'Что тебя сейчас беспокоит больше всего?',
     options: [
       { value: 'unmotivated', label: 'Ничего не хочет, трудно увлечь', icon: '😐', weights: { play: 2, social: 1 } },
       { value: 'jumping', label: 'Перескакивает с кружка на кружок', icon: '🔀', weights: { structure: 2 } },
@@ -110,6 +116,7 @@ const QUESTIONS = [
     block: 'parent',
     type: 'city',
     question: 'В каком городе вы живёте?',
+    questionSelf: 'В каком городе ты живёшь?',
     hint: 'Чтобы подобрать кружки и мастер-классы рядом с вами',
     placeholder: 'Начните вводить название города',
   },
@@ -184,6 +191,7 @@ function publicQuestions() {
     block: q.block,
     type: q.type,
     question: q.question,
+    questionSelf: q.questionSelf,
     hint: q.hint,
     placeholder: q.placeholder,
     options: q.options ? q.options.map(({ value, label, icon }) => ({ value, label, icon })) : undefined,

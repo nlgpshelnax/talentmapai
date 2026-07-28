@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 import { Button, cx } from '../components/ui';
 
 /* ------------------------------------------------------------------ данные */
@@ -50,7 +51,7 @@ const WELCOME_SLIDES = [
   },
 ];
 
-const STEPS = ['role', 'welcome', 'ready'];
+const STEPS = ['role', 'welcome'];
 const STEP_LABELS = { role: 'Кто вы', welcome: 'Как это работает', ready: 'Старт' };
 
 /* ------------------------------------------------------------- компоненты */
@@ -255,44 +256,8 @@ function WelcomeStep({ slide, setSlide, onBack, onNext, onSkip, headingRef }) {
         </button>
 
         <Button onClick={isLast ? onNext : () => setSlide(slide + 1)} className="gap-1.5">
-          {isLast ? 'Готово' : 'Далее'}
+          {isLast ? 'Начать диагностику' : 'Далее'}
           <ArrowRight size={16} aria-hidden="true" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ReadyStep({ role, onStart, onBack, headingRef }) {
-  const roleLabel = role === 'child' ? 'подростка' : 'родителя';
-  return (
-    <div className="text-center">
-      <span
-        aria-hidden="true"
-        className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gold-400/15 text-gold-300 animate-float"
-      >
-        <Rocket size={40} />
-      </span>
-      <h1 ref={headingRef} tabIndex={-1} className="mt-6 text-3xl font-bold text-white outline-none sm:text-4xl">
-        Всё готово к запуску!
-      </h1>
-      <p className="mx-auto mt-4 max-w-lg text-balance text-slate-300">
-        Дальше — 12 коротких вопросов в режиме {roleLabel}. Это займёт около 3 минут, а в конце вы
-        получите персональную карту созвездий компетенций.
-      </p>
-
-      <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm text-slate-300">
-        <Compass size={16} className="text-gold-300" aria-hidden="true" />
-        Готовьтесь отвечать честно — так карта получится точнее.
-      </div>
-
-      <div className="mt-9 flex flex-col items-center gap-3">
-        <Button size="lg" onClick={onStart} className="w-full max-w-xs gap-2">
-          <Sparkles size={18} aria-hidden="true" />
-          Начать диагностику
-        </Button>
-        <Button variant="ghost" onClick={onBack}>
-          Назад
         </Button>
       </div>
     </div>
@@ -303,7 +268,7 @@ function ReadyStep({ role, onStart, onBack, headingRef }) {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, patchUser } = useAuth();
 
   const [step, setStep] = useState('role');
   const [role, setRole] = useState(null);
@@ -321,11 +286,24 @@ export default function Onboarding() {
     navigate('/diagnostics', { state: { role: role || 'parent' } });
   }, [navigate, role]);
 
-  const handleSelectRole = useCallback((value) => {
-    setRole(value);
-    setSlide(0);
-    setStep('welcome');
-  }, []);
+  const handleSelectRole = useCallback(
+    (value) => {
+      setRole(value);
+      setSlide(0);
+      setStep('welcome');
+
+      // Роль сохраняется в профиле, а не живёт в состоянии навигации: от неё
+      // зависят формулировки всех вопросов диагностики, и они не должны
+      // сбрасываться при перезагрузке страницы.
+      api
+        .patch('/users/profile', { role: value })
+        .then((res) => patchUser(res.data.user))
+        .catch(() => {
+          /* не критично: диагностика откатится к формулировкам для родителя */
+        });
+    },
+    [patchUser]
+  );
 
   // Стрелки перелистывают карусель приветствия.
   useEffect(() => {
@@ -361,16 +339,8 @@ export default function Onboarding() {
               slide={slide}
               setSlide={setSlide}
               onBack={() => setStep('role')}
-              onNext={() => setStep('ready')}
-              onSkip={() => setStep('ready')}
-              headingRef={headingRef}
-            />
-          )}
-          {step === 'ready' && (
-            <ReadyStep
-              role={role}
-              onStart={goToDiagnostics}
-              onBack={() => setStep('welcome')}
+              onNext={goToDiagnostics}
+              onSkip={goToDiagnostics}
               headingRef={headingRef}
             />
           )}

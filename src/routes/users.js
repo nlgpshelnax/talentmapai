@@ -25,6 +25,8 @@ async function reloadUser(id) {
 /** Update own profile. Note there is no `userId` field — you can only edit yourself. */
 const profileSchema = z.object({
   name: fields.name.optional(),
+  // Роль выбирается на онбординге (ТЗ 3.1) и определяет формулировки вопросов.
+  role: z.enum(['parent', 'child']).optional(),
   age: fields.age.optional(),
   city: fields.city.optional(),
   weeklyHours: z.string().trim().max(40).optional(),
@@ -36,11 +38,12 @@ router.patch(
   requireAuth,
   validate(profileSchema),
   asyncHandler(async (req, res) => {
-    const { name, age, city, weeklyHours, avatar } = req.body;
+    const { name, role, age, city, weeklyHours, avatar } = req.body;
 
     const updates = [];
     const params = [];
     if (name !== undefined) (updates.push('name = ?'), params.push(name));
+    if (role !== undefined) (updates.push('role = ?'), params.push(role));
     if (age !== undefined) (updates.push('age = ?'), params.push(age));
     if (city !== undefined) (updates.push('city = ?'), params.push(city));
     if (weeklyHours !== undefined) (updates.push('weekly_hours = ?'), params.push(weeklyHours));

@@ -384,25 +384,52 @@ export default function MapPage() {
             </radialGradient>
           </defs>
 
-          {/* Подписи созвездий */}
+          {/* Подписи созвездий.
+              Названия обрезаются под ширину ячейки: в режиме «все созвездия»
+              на экран помещается 14 кластеров, и полные подписи наезжали друг
+              на друга, превращая карту в кашу. */}
           {constellations
             .filter((c) => visibleSet.has(c.id))
-            .map((c) => (
-              <text
-                key={`c-${c.id}`}
-                aria-hidden="true"
-                x={c.x}
-                y={c.y - 200 * unit}
-                textAnchor="middle"
-                className="font-display"
-                fill={c.accent}
-                fontSize={17 * unit}
-                fontWeight="700"
-                opacity="0.95"
-              >
-                {c.icon} {c.name}
-              </text>
-            ))}
+            .map((c) => {
+              // Сколько места по горизонтали остаётся подписи на экране.
+              // Ячейка сетки — 620 мировых единиц; делим на масштаб и оставляем
+              // зазор, чтобы соседние подписи не соприкасались.
+              const availablePx = (620 / unit) * 0.9;
+              const fontPx = 16;
+              const charPx = fontPx * 0.62; // ширина символа Montserrat Bold
+              const maxChars = Math.floor(availablePx / charPx);
+
+              // Если названию не хватает места даже в обрезанном виде, оставляем
+              // только иконку: названия всё равно продублированы в чипах выше,
+              // а наезжающие друг на друга подписи делали карту нечитаемой.
+              const iconOnly = availablePx < 150;
+              const label = iconOnly
+                ? c.icon
+                : c.name.length + 2 > maxChars
+                  ? `${c.icon} ${c.name.slice(0, Math.max(3, maxChars - 3))}…`
+                  : `${c.icon} ${c.name}`;
+
+              return (
+                <text
+                  key={`c-${c.id}`}
+                  aria-hidden="true"
+                  x={c.x}
+                  // Отступ считается в мировых координатах: он должен
+                  // отталкиваться от радиуса кластера (±150), а не от
+                  // масштаба, иначе при уменьшении подпись уезжает на
+                  // соседние созвездия.
+                  y={c.y - (170 + 16 * unit)}
+                  textAnchor="middle"
+                  className="font-display"
+                  fill={c.accent}
+                  fontSize={(iconOnly ? 22 : fontPx) * unit}
+                  fontWeight="700"
+                  opacity="0.95"
+                >
+                  {label}
+                </text>
+              );
+            })}
 
           {/* Связи между навыками */}
           {edges.map((e) => {

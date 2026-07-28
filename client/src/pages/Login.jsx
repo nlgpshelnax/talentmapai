@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn, Sparkles, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, LogIn, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import api, { errorMessage } from '../lib/api';
@@ -8,6 +8,8 @@ import { Button, Field, Input, Alert, cx } from '../components/ui';
 
 const DEMO_EMAIL = 'demo@talentmap.ai';
 const DEMO_PASSWORD = 'demo123';
+const ADMIN_EMAIL = 'admin@talentmap.ai';
+const ADMIN_PASSWORD = 'admin12345';
 
 export default function Login() {
   const { login } = useAuth();
@@ -55,6 +57,12 @@ export default function Login() {
     setEmail(DEMO_EMAIL);
     setPassword(DEMO_PASSWORD);
     signIn(DEMO_EMAIL, DEMO_PASSWORD);
+  }
+
+  function handleAdmin() {
+    setEmail(ADMIN_EMAIL);
+    setPassword(ADMIN_PASSWORD);
+    signIn(ADMIN_EMAIL, ADMIN_PASSWORD);
   }
 
   return (
@@ -131,7 +139,7 @@ export default function Login() {
           >
             <p className="text-sm font-semibold text-gold-300">Демо-доступ</p>
             <p className="mt-1 text-xs leading-relaxed text-slate-300">
-              Хотите осмотреться без регистрации? Войдите в демо-аккаунт&nbsp;—
+              Хотите осмотреться без регистрации? Готовые аккаунты&nbsp;— ребёнок
               <span className="whitespace-nowrap"> {DEMO_EMAIL}</span> /{' '}
               <span className="whitespace-nowrap">{DEMO_PASSWORD}</span>.
             </p>
@@ -144,8 +152,27 @@ export default function Login() {
               className={cx('mt-3 w-full', submitting && 'pointer-events-none')}
             >
               <Sparkles size={16} aria-hidden="true" />
-              Войти как демо
+              Войти как ребёнок
             </Button>
+
+            {/* Без этой кнопки в админ-панель было не попасть: аккаунт нигде
+                не упоминался, а ссылка на неё пряталась в безымянной иконке. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleAdmin}
+              disabled={submitting}
+              className={cx('mt-2 w-full', submitting && 'pointer-events-none')}
+            >
+              <ShieldCheck size={16} aria-hidden="true" />
+              Войти как администратор
+            </Button>
+
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+              Аккаунт администратора — {ADMIN_EMAIL} / {ADMIN_PASSWORD}. После входа в меню появится пункт
+              «Админ-панель».
+            </p>
           </div>
         </section>
 

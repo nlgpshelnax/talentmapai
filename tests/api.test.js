@@ -462,6 +462,28 @@ test('password change requires the current password', async () => {
   assert.equal(old.status, 400, 'the old password no longer works');
 });
 
+test('the onboarding role choice persists to the profile', async () => {
+  // Формулировки диагностики зависят от роли, поэтому выбор с онбординга
+  // должен сохраняться, а не жить только в состоянии навигации.
+  const reg = await request(app)
+    .post('/api/auth/register')
+    .send({ name: 'Подросток', email: `teen-${Date.now()}@example.com`, password: 'password123' });
+  const token = reg.body.token;
+  assert.equal(reg.body.user.role, 'parent', 'по умолчанию — родитель');
+
+  const saved = await auth(request(app).patch('/api/users/profile'), token).send({ role: 'child' });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.user.role, 'child');
+
+  const me = await auth(request(app).get('/api/auth/me'), token);
+  assert.equal(me.body.user.role, 'child', 'роль сохраняется между запросами');
+});
+
+test('an unknown role value is rejected', async () => {
+  const res = await auth(request(app).patch('/api/users/profile'), demoToken).send({ role: 'teacher' });
+  assert.equal(res.status, 400);
+});
+
 test('the parent PIN is stored hashed and verified correctly', async () => {
   const set = await auth(request(app).post('/api/users/pin'), demoToken).send({ pin: '4321' });
   assert.equal(set.status, 200);

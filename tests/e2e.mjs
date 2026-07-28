@@ -39,6 +39,10 @@ async function shot(page, name) {
   return file;
 }
 
+// Тексты всех вопросов, которые видит пользователь, — чтобы поймать повторы.
+let askedOnRegister = [];
+const askedQuestions = [];
+
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.floor(Math.random() * 1e4)}@example.com`;
 
 async function main() {
@@ -77,25 +81,22 @@ async function main() {
   await page.goto(`${BASE}/register`, { waitUntil: 'networkidle' });
   await shot(page, 'register');
 
+  // Регистрация должна спрашивать только имя, почту и пароль. Роль, возраст и
+  // город собираются дальше по воронке; когда их спрашивали ещё и здесь,
+  // пользователь отвечал на одно и то же по два раза.
+  const regLabels = (await page.locator('label').allTextContents()).map((t) => t.replace(/\s+/g, ' ').trim());
+  askedOnRegister = regLabels;
+  // Осторожно с подстроками: «Пароль» содержит «роль».
+  const strayFields = regLabels.filter((l) => /возраст|город|кто вы|^роль\b/i.test(l));
+  strayFields.length === 0
+    ? pass('регистрация не спрашивает возраст, город и роль', regLabels.join(' · '))
+    : fail('регистрация дублирует поля', strayFields.join(', '));
+
   await page.getByLabel(/имя/i).first().fill('Тестовый Ребёнок');
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').first().fill('password123');
 
-  const cityInput = page.locator('input#city, input[name="city"], input[placeholder*="город" i]').first();
-  if (await cityInput.count()) {
-    await cityInput.fill('Мос');
-    await page.waitForTimeout(700);
-    const suggestion = page.getByRole('option').first();
-    if (await suggestion.count()) {
-      await suggestion.click();
-      pass('автодополнение города работает');
-    } else {
-      await cityInput.fill('Москва');
-      fail('автодополнение города', 'подсказки не появились');
-    }
-  }
-
-  await page.getByRole('button', { name: /зарегистр|создать|начать/i }).first().click();
+  await page.getByRole('button', { name: /зарегистр|создать|продолжить|начать/i }).first().click();
   await page.waitForURL(/\/(onboarding|app|diagnostics)/, { timeout: 15000 });
   pass('регистрация прошла', page.url().replace(BASE, ''));
 
@@ -105,6 +106,9 @@ async function main() {
     await shot(page, 'onboarding-role');
 
     // The role cards are an accessible radiogroup, not plain buttons.
+    const roleHeading = (await page.locator('h1, h2').first().textContent().catch(() => '')) || '';
+    askedQuestions.push(roleHeading.replace(/\s+/g, ' ').trim());
+
     const parentCard = page
       .getByRole('radio', { name: /родител/i })
       .or(page.getByRole('button', { name: /родител/i }))
@@ -146,6 +150,9 @@ async function main() {
   for (let step = 0; step < 20; step++) {
     if (page.url().includes('/app')) break;
 
+    const qHeading = (await page.locator('h1').first().textContent().catch(() => '')) || '';
+    if (qHeading.trim()) askedQuestions.push(qHeading.replace(/\s+/g, ' ').trim());
+
     const buildBtn = page.getByRole('button', { name: /построить карту/i }).first();
     const radios = page.getByRole('radio');
     const cityField = page.locator('input[role="combobox"], input[placeholder*="город" i]').first();
@@ -180,6 +187,22 @@ async function main() {
   }
 
   answered >= 12 ? pass(`отвечено на ${answered} вопросов`) : fail(`отвечено только на ${answered} вопросов`, 'ожидалось 12');
+
+  // Ни одна сущность не должна запрашиваться дважды за путь пользователя.
+  // Именно этим страдала прошлая версия: возраст, город и роль спрашивались
+  // и при регистрации, и потом ещё раз.
+  const everythingAsked = [...askedOnRegister, ...askedQuestions].join(' § ').toLowerCase();
+  const countAsks = (re) => (everythingAsked.match(re) || []).length;
+
+  const duplicated = [
+    ['возраст', /сколько (лет|тебе лет)|возраст/g],
+    ['город', /город/g],
+    ['роль', /кто (вы|будет проходить)|я родитель/g],
+  ].filter(([, re]) => countAsks(re) > 1);
+
+  duplicated.length === 0
+    ? pass('ни возраст, ни город, ни роль не спрашиваются дважды')
+    : fail('повторные вопросы', duplicated.map(([n, re]) => `${n} × ${countAsks(re)}`).join(', '));
 
   await shot(page, 'diagnostics-result');
 
@@ -426,6 +449,21 @@ async function main() {
   await admin.waitForTimeout(2500);
   await admin.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
   await admin.waitForTimeout(1800);
+
+  // Раньше вход в админку был только безымянной иконкой-щитом среди четырёх
+  // других иконок — пользователь её не нашёл. Теперь это подписанный пункт меню.
+  await admin.goto(`${BASE}/app`, { waitUntil: 'networkidle' });
+  await admin.waitForTimeout(1500);
+  const adminNav = admin.getByRole('link', { name: /админ-панель/i }).first();
+  if (await adminNav.count()) {
+    pass('в меню есть подписанный пункт «Админ-панель»');
+    await adminNav.click();
+    await admin.waitForTimeout(2000);
+  } else {
+    fail('пункт «Админ-панель» не найден в меню');
+    await admin.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
+    await admin.waitForTimeout(1500);
+  }
 
   admin.url().includes('/admin') ? pass('администратор попадает в админку') : fail('администратора не пустило в админку');
   await admin.screenshot({ path: path.join(SHOTS, `${String(++shotIndex).padStart(2, '0')}-admin.png`) });

@@ -16,11 +16,24 @@ import { useAuth } from '../context/AuthContext';
 import { Alert, Button, Field, Spinner, cx, inputClass } from '../components/ui';
 
 const TOTAL = 12;
-const BLOCK_LABELS = { parent: 'Вопросы для родителя', child: 'Вопросы для ребёнка' };
+/**
+ * Подписи блоков зависят от того, кто проходит тест. Подростку, который отвечает
+ * сам, бессмысленно показывать «Вопросы для родителя» — и тем более спрашивать
+ * у него «Сколько лет ребёнку?».
+ */
+const BLOCK_LABELS = {
+  parent: { parent: 'Вопросы для родителя', child: 'Вопросы для ребёнка' },
+  child: { parent: 'О тебе', child: 'Твои предпочтения' },
+};
+
+/** Текст вопроса в нужном лице: подростку — «ты», родителю — «ваш ребёнок». */
+function questionText(question, role) {
+  return role === 'child' && question.questionSelf ? question.questionSelf : question.question;
+}
 
 /* ------------------------------------------------------- город: автодополнение */
 
-function CityAutocomplete({ question, value, onChange }) {
+function CityAutocomplete({ question, value, onChange, role }) {
   const inputId = useId();
   const listboxId = `${inputId}-list`;
   const [suggestions, setSuggestions] = useState([]);
@@ -113,7 +126,7 @@ function CityAutocomplete({ question, value, onChange }) {
 
   return (
     <div className="mx-auto max-w-md">
-      <Field label={question.question} hint={question.hint} htmlFor={inputId}>
+      <Field label={questionText(question, role)} hint={question.hint} htmlFor={inputId}>
         <div ref={boxRef} className="relative">
           <MapPin
             size={18}
@@ -177,7 +190,7 @@ function CityAutocomplete({ question, value, onChange }) {
 
 /* ---------------------------------------------------------- выбор из вариантов */
 
-function ChoiceGrid({ question, value, onChange }) {
+function ChoiceGrid({ question, value, onChange, role }) {
   const optionsRef = useRef([]);
   const options = question.options || [];
 
@@ -219,7 +232,7 @@ function ChoiceGrid({ question, value, onChange }) {
   return (
     <div
       role="radiogroup"
-      aria-label={question.question}
+      aria-label={questionText(question, role)}
       className="grid gap-3 sm:grid-cols-2"
     >
       {options.map((option, index) => {
@@ -263,7 +276,8 @@ function ChoiceGrid({ question, value, onChange }) {
 
 /* -------------------------------------------------- межблоковая заставка (child) */
 
-function ChildInterstitial({ onContinue, headingRef }) {
+function ChildInterstitial({ onContinue, headingRef, role }) {
+  const forSelf = role === 'child';
   return (
     <div className="text-center">
       <span
@@ -273,11 +287,12 @@ function ChildInterstitial({ onContinue, headingRef }) {
         <Baby size={40} />
       </span>
       <h2 ref={headingRef} tabIndex={-1} className="mt-6 text-2xl font-bold text-white outline-none sm:text-3xl">
-        Теперь вопросы для ребёнка
+        {forSelf ? 'Теперь — про твои вкусы' : 'Теперь вопросы для ребёнка'}
       </h2>
       <p className="mx-auto mt-4 max-w-md text-balance text-slate-300">
-        Дальше несколько простых вопросов — пусть на них ответит сам ребёнок. Здесь нет правильных или
-        неправильных ответов, выбирай то, что нравится больше!
+        {forSelf
+          ? 'Осталось пять коротких вопросов о том, что тебе нравится. Правильных ответов здесь нет — выбирай то, что ближе.'
+          : 'Дальше несколько простых вопросов — пусть на них ответит сам ребёнок. Здесь нет правильных или неправильных ответов, выбирай то, что нравится больше!'}
       </p>
       <div className="mt-8">
         <Button size="lg" onClick={onContinue} className="gap-2">
@@ -368,7 +383,11 @@ function ResultScreen({ result, onOpenMap, onRestart }) {
 export default function Diagnostics() {
   const navigate = useNavigate();
   const { refresh } = useAppState();
-  const { patchUser } = useAuth();
+  const { user, patchUser } = useAuth();
+
+  // Кто проходит тест, выбирается на онбординге и сохраняется в профиле,
+  // поэтому формулировки остаются корректными и после перезагрузки страницы.
+  const role = user?.role === 'child' ? 'child' : 'parent';
 
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -533,7 +552,7 @@ export default function Diagnostics() {
   }
 
   const progressPct = Math.round(((index + 1) / TOTAL) * 100);
-  const blockLabel = BLOCK_LABELS[current.block] || '';
+  const blockLabel = BLOCK_LABELS[role]?.[current.block] || '';
 
   return (
     <main className="space-gradient flex min-h-screen flex-col items-center px-5 py-10 sm:py-14">
@@ -572,7 +591,7 @@ export default function Diagnostics() {
 
         <section className="glass-strong rounded-3xl p-6 sm:p-9">
           {showChildIntro ? (
-            <ChildInterstitial onContinue={continueFromChildIntro} headingRef={headingRef} />
+            <ChildInterstitial onContinue={continueFromChildIntro} headingRef={headingRef} role={role} />
           ) : (
             <>
               {current.type === 'city' ? (
@@ -582,9 +601,10 @@ export default function Diagnostics() {
                     tabIndex={-1}
                     className="sr-only"
                   >
-                    {current.question}
+                    {questionText(current, role)}
                   </h1>
                   <CityAutocomplete
+                    role={role}
                     question={current}
                     value={typeof answer === 'string' ? answer : ''}
                     onChange={(val) => setAnswer(current.id, val)}
@@ -597,11 +617,12 @@ export default function Diagnostics() {
                     tabIndex={-1}
                     className="text-2xl font-bold text-white outline-none sm:text-3xl"
                   >
-                    {current.question}
+                    {questionText(current, role)}
                   </h1>
                   {current.hint && <p className="mt-2 text-sm text-slate-400">{current.hint}</p>}
                   <div className="mt-6">
                     <ChoiceGrid
+                      role={role}
                       question={current}
                       value={typeof answer === 'string' ? answer : ''}
                       onChange={(val) => setAnswer(current.id, val)}

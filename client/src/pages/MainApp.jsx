@@ -7,6 +7,7 @@ import {
   Settings as SettingsIcon,
   Share2,
   Shield,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   User as UserIcon,
@@ -35,6 +36,13 @@ const TABS = [
   { to: '/app/profile', label: 'Профиль', icon: UserIcon },
 ];
 
+/**
+ * Админ-панель раньше была доступна только по безымянной иконке-щиту среди
+ * четырёх других иконок в шапке — найти её было практически невозможно.
+ * Теперь у администратора это обычный подписанный пункт меню.
+ */
+const ADMIN_TAB = { to: '/admin', label: 'Админ-панель', shortLabel: 'Админка', icon: ShieldCheck, admin: true };
+
 export default function MainApp() {
   const { user, logout } = useAuth();
   const { state, loading, error } = useAppState();
@@ -50,6 +58,8 @@ export default function MainApp() {
     const done = stars.filter((s) => completed.has(s.id)).length;
     return { done, total: stars.length, percent: stars.length ? Math.round((done / stars.length) * 100) : 0 };
   }, [state]);
+
+  const tabs = user?.isAdmin ? [...TABS, ADMIN_TAB] : TABS;
 
   const handleLogout = () => {
     logout();
@@ -117,16 +127,6 @@ export default function MainApp() {
               <SettingsIcon size={19} aria-hidden="true" />
             </NavLink>
 
-            {user?.isAdmin && (
-              <NavLink
-                to="/admin"
-                aria-label="Админ-панель"
-                className="rounded-xl p-2 text-nebula-400 transition hover:bg-white/10 hover:text-white"
-              >
-                <Shield size={19} aria-hidden="true" />
-              </NavLink>
-            )}
-
             <button
               type="button"
               onClick={handleLogout}
@@ -142,7 +142,7 @@ export default function MainApp() {
 
         {/* Навигация — десктоп */}
         <nav aria-label="Основная навигация" className="mx-auto hidden max-w-7xl gap-1 px-6 pb-2 md:flex">
-          {TABS.map(({ to, end, label, icon: Icon }) => (
+          {tabs.map(({ to, end, label, icon: Icon, admin }) => (
             <NavLink
               key={to}
               to={to}
@@ -150,7 +150,11 @@ export default function MainApp() {
               className={({ isActive }) =>
                 cx(
                   'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
-                  isActive ? 'bg-white/10 text-gold-300' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  isActive
+                    ? 'bg-white/10 text-gold-300'
+                    : admin
+                      ? 'text-nebula-400 hover:bg-white/5 hover:text-white'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 )
               }
             >
@@ -187,7 +191,7 @@ export default function MainApp() {
         className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-space-950/95 backdrop-blur-xl md:hidden"
       >
         <div className="flex items-stretch justify-around px-1 pt-1">
-          {TABS.map(({ to, end, label, icon: Icon }) => (
+          {tabs.map(({ to, end, label, shortLabel, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -203,7 +207,7 @@ export default function MainApp() {
                 <>
                   {isActive && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-gold-400" />}
                   <Icon size={20} aria-hidden="true" />
-                  <span className="truncate">{label}</span>
+                  <span className="w-full truncate text-center">{shortLabel || label}</span>
                 </>
               )}
             </NavLink>

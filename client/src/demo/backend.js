@@ -484,8 +484,9 @@ const routes = [
   // ──────────────────────────────────────────────────────────── users
   ['PATCH', /^\/users\/profile$/, (ctx) => {
     const user = requireUser(ctx);
-    const { name, age, city, weeklyHours } = ctx.body;
+    const { name, role, age, city, weeklyHours } = ctx.body;
     if (name !== undefined) user.name = String(name).trim();
+    if (role !== undefined) user.role = role;
     if (age !== undefined) user.age = Number(age);
     if (city !== undefined) user.city = city;
     if (weeklyHours !== undefined) user.weeklyHours = weeklyHours;
