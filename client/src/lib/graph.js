@@ -92,6 +92,40 @@ export function boundsOf(stars) {
   };
 }
 
+/**
+ * The single star the child should work on next — the client mirror of the
+ * server's rule (src/services/graph.js). Preference order: the constellation
+ * with the most progress first (finish a path before opening a new one), then
+ * the lowest order index inside it.
+ *
+ * Normally the server supplies `currentStarId`; this exists so the static demo
+ * build can compute it in the browser using the very same rule.
+ */
+export function currentStarId(stars, edges, completedStars, visibleConstellationIds) {
+  const completed = new Set((completedStars || []).map(Number));
+  const available = computeAvailability(stars, edges, completedStars, visibleConstellationIds);
+
+  const candidates = (stars || []).filter((s) => available.has(s.id) && !completed.has(s.id));
+  if (!candidates.length) return null;
+
+  const progressByConstellation = new Map();
+  for (const s of stars || []) {
+    if (!completed.has(s.id)) continue;
+    const c = Number(s.constellationId);
+    progressByConstellation.set(c, (progressByConstellation.get(c) || 0) + 1);
+  }
+
+  candidates.sort((a, b) => {
+    const pa = progressByConstellation.get(Number(a.constellationId)) || 0;
+    const pb = progressByConstellation.get(Number(b.constellationId)) || 0;
+    if (pa !== pb) return pb - pa;
+    if ((a.orderIndex || 0) !== (b.orderIndex || 0)) return (a.orderIndex || 0) - (b.orderIndex || 0);
+    return a.id - b.id;
+  });
+
+  return candidates[0].id;
+}
+
 /** Per-constellation completion, for the progress panel. */
 export function constellationProgress(constellations, stars, completedStars) {
   const completed = new Set((completedStars || []).map(Number));

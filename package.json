@@ -14,7 +14,9 @@
     "setup": "npm install && npm --prefix client install",
     "seed": "node src/db/reseed.js",
     "test": "node --test tests/*.test.js",
-    "lint": "npm --prefix client run lint"
+    "lint": "npm --prefix client run lint",
+    "demo:data": "node scripts/build-demo-data.js",
+    "demo:build": "npm run demo:data && npm --prefix client install && npm --prefix client run build"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

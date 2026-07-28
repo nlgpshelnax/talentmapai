@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { installDemoBackend } from '@demo';
 
 /**
  * Single axios instance for the whole app.
@@ -11,6 +12,10 @@ const api = axios.create({
   baseURL: '/api',
   timeout: 30000,
 });
+
+// In the static GitHub Pages build there is no server, so requests are served
+// by an in-browser implementation of the same API. No-op in normal builds.
+installDemoBackend(api);
 
 const TOKEN_KEY = 'talentmap.token';
 

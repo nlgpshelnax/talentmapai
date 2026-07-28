@@ -23,3 +23,7 @@ coverage/
 tests/screenshots/
 talentmap-ai.tar.gz
 *.tar.gz
+
+# Артефакты демо-сборки (генерируются npm run demo:data)
+client/src/demo/snapshot.json
+client/src/demo/generated/

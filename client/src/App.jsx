@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppStateProvider } from './context/AppStateContext';
 import { Spinner } from './components/ui';
+import DemoBanner from './components/DemoBanner';
 
 import PublicLanding from './pages/PublicLanding';
 import Login from './pages/Login';
@@ -122,10 +123,11 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <AuthProvider>
         <AppStateProvider>
           <div className="space-bg min-h-screen text-slate-100">
+            <DemoBanner />
             <AppRoutes />
           </div>
         </AppStateProvider>
