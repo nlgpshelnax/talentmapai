@@ -380,7 +380,7 @@ async function main() {
     pass('модальное окно открылось');
     await shot(page, 'star-modal');
 
-    for (const tab of ['Офлайн', 'Онлайн', 'ИТ']) {
+    for (const tab of ['Очно', 'Онлайн', 'ИТ']) {
       const t = page.getByRole('tab', { name: new RegExp(tab, 'i') }).first();
       if (await t.count()) {
         await t.click();
@@ -389,6 +389,34 @@ async function main() {
     }
     pass('три вкладки ресурсов переключаются');
     await shot(page, 'star-modal-tool');
+
+    // Вкладка «Очно»: реальные площадки по городу ребёнка. В прототипе здесь
+    // лежал ровно один выдуманный мастер-класс с адресом из головы.
+    const offlineTab = page.getByRole('tab', { name: /очно/i }).first();
+    if (await offlineTab.count()) {
+      await offlineTab.click();
+      await page.waitForTimeout(1600);
+      await shot(page, 'star-modal-venues');
+
+      const venues = await page.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]');
+        const links = [...(dlg?.querySelectorAll('a[href^="http"]') || [])].map((a) => a.href);
+        return { links, text: dlg?.textContent || '' };
+      });
+
+      venues.links.length > 0
+        ? pass(`во вкладке «Очно» ссылок на площадки: ${venues.links.length}`)
+        : fail('во вкладке «Очно» нет ни одной площадки');
+
+      const fake = venues.links.filter((u) => /example|placeholder/i.test(u));
+      fake.length === 0
+        ? pass('ссылки площадок ведут на настоящие сайты')
+        : fail(`выдуманные домены в площадках: ${fake.length}`, fake.slice(0, 2).join(', '));
+
+      /В городе|Откуда угодно|В других городах/.test(venues.text)
+        ? pass('площадки разложены по близости к ребёнку')
+        : fail('площадки не сгруппированы по городу');
+    }
 
     // Escape must close it — the prototype had no key handler at all.
     await page.keyboard.press('Escape');
@@ -585,6 +613,8 @@ async function main() {
   await shot(page, 'parent-dashboard');
   pass('родительский раздел открывается');
 
+  // Каталог площадок приходит отдельным запросом — ждём его отрисовки.
+  await page.getByText(/В городе|Откуда угодно|В других городах/).first().waitFor({ timeout: 8000 }).catch(() => {});
   const parentText = (await page.textContent('body')) || '';
 
   // Раздел был точной копией профиля ребёнка. Родителю нужны другие вещи:
@@ -594,8 +624,9 @@ async function main() {
     [/за 30 дней/i, 'показан темп занятий'],
     [/последнее занятие/i, 'показана давность активности'],
     [/Сейчас в работе/i, 'показан текущий шаг ребёнка'],
-    [/Куда сходить|в другом городе|проходит его онлайн/i, 'подсказано, где заниматься очно'],
+    [/Где заниматься очно/i, 'подсказано, где заниматься очно'],
     [/заработано за всё время/i, 'показан заработанный опыт, а не остаток'],
+    [/В городе|Откуда угодно|В других городах/i, 'площадки подобраны по городу ребёнка'],
   ];
   for (const [re, label] of parentOnly) {
     re.test(parentText) ? pass(`родительский раздел: ${label}`) : fail(`родительский раздел: нет — ${label}`);

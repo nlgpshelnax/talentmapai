@@ -292,6 +292,36 @@ const routes = [
     };
   }],
 
+  // ───────────────────────────────────────────────────────── venues
+  ['GET', /^\/venues$/, (ctx) => {
+    const user = requireUser(ctx);
+    const g = graph();
+    const key = ctx.query.constellationId
+      ? g.constellations.find((c) => c.id === Number(ctx.query.constellationId))?.key
+      : ctx.query.key;
+
+    const city = (ctx.query.city || user.city || '').trim();
+    const all = (snapshot.venues || []).filter((v) => !key || v.directions.includes(key));
+
+    // Площадки «Вся Россия» и «Онлайн» доступны из любого города.
+    const ANYWHERE = ['Вся Россия', 'Онлайн'];
+    const same = (a, b) => a.toLocaleLowerCase('ru') === b.toLocaleLowerCase('ru');
+    const anywhere = all.filter((v) => ANYWHERE.includes(v.city));
+    const placed = all.filter((v) => !ANYWHERE.includes(v.city));
+    const local = city ? placed.filter((v) => same(v.city, city)) : [];
+    const elsewhere = city ? placed.filter((v) => !same(v.city, city)) : placed;
+
+    return {
+      data: {
+        city: city || null,
+        local,
+        elsewhere,
+        anywhere,
+        totals: { local: local.length, elsewhere: elsewhere.length, anywhere: anywhere.length },
+      },
+    };
+  }],
+
   // ────────────────────────────────────────────────────── diagnostics
   ['GET', /^\/diagnostics\/questions$/, () => ({ data: { questions: snapshot.questions } })],
 

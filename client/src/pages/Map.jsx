@@ -26,6 +26,7 @@ import { skills } from '../lib/plural';
 import { errorMessage } from '../lib/api';
 import { Alert, Badge, Button, Modal, Spinner, cx } from '../components/ui';
 import PaywallModal from '../components/PaywallModal';
+import { VenueList } from '../components/Venues';
 
 /* ------------------------------------------------------------------ theme */
 
@@ -43,7 +44,7 @@ const STAR_STYLE = {
 };
 
 const RESOURCE_TABS = [
-  { type: 'offline', label: 'Офлайн', icon: Building2, hint: 'Кружки и мастер-классы рядом с вами' },
+  { type: 'offline', label: 'Очно', icon: Building2, hint: 'Кружки и центры по этому направлению' },
   { type: 'online', label: 'Онлайн', icon: Globe, hint: 'Курсы и видеоуроки' },
   { type: 'tool', label: 'ИТ-инструмент', icon: Wrench, hint: 'Программы для практики' },
 ];
@@ -726,6 +727,11 @@ function StarModal({
   const starResources = (resources || []).filter((r) => r.starId === star.id);
   const active = starResources.filter((r) => r.type === tab);
 
+  // «Очно» — это про направление, а не про конкретный навык: в студию ходят
+  // учиться графике, а не «работе со слоями». Поэтому вкладка берёт данные из
+  // каталога площадок по городу, а не из ресурсов звезды.
+  const isVenueTab = tab === 'offline';
+
   return (
     <Modal
       open={Boolean(star)}
@@ -768,7 +774,7 @@ function StarModal({
 
           <div className="flex gap-1 rounded-xl border border-white/10 p-1" role="tablist" aria-label="Тип ресурса">
             {RESOURCE_TABS.map(({ type, label, icon: Icon }) => {
-              const count = starResources.filter((r) => r.type === type).length;
+              const count = type === 'offline' ? null : starResources.filter((r) => r.type === type).length;
               return (
                 <button
                   key={type}
@@ -793,13 +799,23 @@ function StarModal({
           <p className="mt-2 text-xs text-slate-500">{RESOURCE_TABS.find((t) => t.type === tab)?.hint}</p>
 
           <div className="mt-3 space-y-2.5">
-            {active.length === 0 && (
+            {isVenueTab && (
+              <VenueList
+                constellationId={constellation?.id}
+                userCity={userCity}
+                limit={3}
+                emptyHint="По этому направлению мы пока не нашли очных занятий. Загляните во вкладки «Онлайн» и «Инструменты» — там есть с чего начать."
+              />
+            )}
+
+            {!isVenueTab && active.length === 0 && (
               <p className="rounded-xl border border-dashed border-white/12 px-4 py-6 text-center text-sm text-slate-500">
                 Для этого навыка пока нет материалов такого типа.
               </p>
             )}
 
-            {active.map((r) => (
+            {!isVenueTab &&
+              active.map((r) => (
               <div key={r.id} className="rounded-xl border border-white/10 bg-space-800/50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -807,12 +823,6 @@ function StarModal({
                     {r.detail1 && <p className="mt-1 text-sm text-slate-400">{r.detail1}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {r.detail2 && <Badge tone="neutral">{r.detail2}</Badge>}
-                      {r.type === 'offline' && r.city && (
-                        <Badge tone={r.city === userCity ? 'green' : 'neutral'}>
-                          {r.city}
-                          {r.city === userCity ? ' · ваш город' : ''}
-                        </Badge>
-                      )}
                     </div>
                   </div>
 

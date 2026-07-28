@@ -1,0 +1,412 @@
+{
+  "researchedAt": "2026-07-29",
+  "notes": "Every branch marked verified:true had its page actually fetched and read during research. Addresses are copied verbatim from official/authoritative pages. Where only a network-level presence could be confirmed (no specific centre page opened), the city is listed under citiesUnverified. Kvantorium has two sub-variants: standalone regional 'детский технопарк Кванториум' (flagship centres, captured here) and school-based 'Школьный Кванториум' (created at individual schools); for Kazan only school-based Kvantorium sites exist among the target cities, noted in the branch. The federal city of Москва runs its own municipal 'Детские технопарки Москвы' network (technopark-kids.ru) which includes a Кванториум, and is NOT part of the regional-operator federal Kvantorium scheme in the same way; it is captured as a separate network. Москва is also NOT a separate entry in the federal Sirius regional-centres registry.",
+  "networks": [
+    {
+      "id": "kvantorium",
+      "name": "Детский технопарк «Кванториум»",
+      "shortName": "Кванториум",
+      "officialUrl": "https://roskvantorium.ru",
+      "kind": "state",
+      "priceNote": "Бесплатно (государственный проект; финансирование из регионального/федерального бюджетов; отдельные летние смены и программы сверх госзадания могут быть платными)",
+      "ageRange": "11–18 лет (в отдельных регионах с 7 лет)",
+      "summary": "Федеральная сеть детских технопарков дополнительного технического образования, где школьники бесплатно обучаются инженерным направлениям («квантумам») через проектную деятельность на высокотехнологичном оборудовании; федеральный оператор — ФГАУ «Фонд новых форм развития образования».",
+      "directions": ["robotics", "programming-web", "ai-data", "3d-printing", "drone-piloting", "bioengineering", "engineering-graphics", "design-project", "media-content"],
+      "branches": [
+        {
+          "city": "Новосибирск",
+          "name": "Детский технопарк «Кванториум» Новосибирск (ГАУ ДО НСО «Областной центр развития творчества детей и юношества»)",
+          "address": "г. Новосибирск, проспект Карла Маркса, 33",
+          "url": "https://kvantorium54.ru/about/",
+          "sourceUrl": "https://kvantorium54.ru/about/",
+          "verified": true
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Детский технопарк «Кванториум Нижний Новгород» (ГБУ ДО «Центр молодёжных, инженерных и научных компетенций «Кванториум»)",
+          "address": "603005, г. Нижний Новгород, ул. Ульянова, д. 10Б",
+          "url": "https://kvantorium52.ru/info/",
+          "sourceUrl": "https://kvantorium52.ru/info/",
+          "verified": true
+        },
+        {
+          "city": "Воронеж",
+          "name": "Детский технопарк «Кванториум» (ГБУ ДО ВО «Центр инженерных компетенций детей и молодёжи «Кванториум»)",
+          "address": "г. Воронеж, проспект Труда, д. 65 (также площадка ул. Щорса, д. 164)",
+          "url": "http://kvantoriumvrn.ru/o-nas",
+          "sourceUrl": "http://kvantoriumvrn.ru/kontakty",
+          "verified": true
+        },
+        {
+          "city": "Ростов-на-Дону",
+          "name": "Детский технопарк «Кванториум» Ростовской области (региональный оператор ГБУ ДО РО «Областной центр технического творчества учащихся»)",
+          "address": "г. Ростов-на-Дону, ул. Закруткина, 67 (также площадка ДГТУ, пл. Гагарина, 1)",
+          "url": "https://kvantorium-don.ru/about-kvantorium",
+          "sourceUrl": "https://kvantorium-don.ru/about-kvantorium",
+          "verified": true
+        },
+        {
+          "city": "Омск",
+          "name": "Детский технопарк «Кванториум» (структурное подразделение БУ ДО «Омская областная станция юных техников»)",
+          "address": "644027, г. Омск, ул. Петра Осминина, 34",
+          "url": "https://oblsut55.ru/?page_id=5115",
+          "sourceUrl": "https://omgups.ru/university/fdpipo/sotsialnye-partnyery/detskiy-tekhnopark-kvantorium/",
+          "verified": true
+        },
+        {
+          "city": "Екатеринбург",
+          "name": "Детский технопарк «Кванториум. Екатеринбург» (структурное подразделение ГАНОУ СО «Дворец молодёжи»)",
+          "address": "г. Екатеринбург, ул. Бориса Ельцина, 3 (Ельцин Центр), 4 этаж",
+          "url": "https://kvant.dm-centre.ru/about/",
+          "sourceUrl": "https://kvant.dm-centre.ru/about/",
+          "verified": true
+        },
+        {
+          "city": "Красноярск",
+          "name": "АНО «Красноярский детский технопарк «Кванториум»",
+          "address": "660049, г. Красноярск, ул. Дубровинского, д. 1и, пом. 15 (Галерея «Енисей»)",
+          "url": "https://kvantorium24.ru/основные-сведения/",
+          "sourceUrl": "https://kvantorium24.ru/контакты/",
+          "verified": true
+        },
+        {
+          "city": "Пермь",
+          "name": "Детский технопарк «Кванториум Фотоника»",
+          "address": "614014, г. Пермь, ул. 25 Октября, д. 64",
+          "url": "https://kvantorium-perm.ru/org-info/",
+          "sourceUrl": "https://kvantorium-perm.ru/kvant-work-time/",
+          "verified": true
+        },
+        {
+          "city": "Самара",
+          "name": "Детский технопарк «Кванториум-63 регион» (структурное подразделение ГБОУ ДО СО «Самарский областной центр детско-юношеского технического творчества»)",
+          "address": "г. Самара, проспект Масленникова, д. 37",
+          "url": "https://www.juntech.ru/podrazdeleniya/kvantorium-samara",
+          "sourceUrl": "https://www.juntech.ru/podrazdeleniya/kvantorium-samara",
+          "verified": true
+        },
+        {
+          "city": "Уфа",
+          "name": "Детский технопарк «Кванториум Башкортостана» (на базе ГБУ ДО Республиканский детский образовательный технопарк)",
+          "address": "450077, Республика Башкортостан, г. Уфа, ул. Кирова, д. 43",
+          "url": "https://rtekhnopark.wixsite.com/rdot/osnovnye-svedeniya",
+          "sourceUrl": "https://rtekhnopark.wixsite.com/rdot/struktura-i-organy-upravleniya",
+          "verified": true
+        },
+        {
+          "city": "Челябинск",
+          "name": "Детский технопарк «Кванториум» г. Челябинск (обособленное подразделение ГБУ ДО «Дом юношеского технического творчества Челябинской области»)",
+          "address": "454091, г. Челябинск, ул. Орджоникидзе, д. 50",
+          "url": "https://robo74.ru/about-us/filials/quantorium",
+          "sourceUrl": "https://robo74.ru/kvantorium/kvantorium74/obratnaya-svyaz/contacts",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Школьный технопарк «Кванториум» на базе МБОУ «Гимназия № 174» (в Казани среди целевых площадок действуют только школьные Кванториумы; создан 2024, нацпроект «Образование»)",
+          "address": "420100, Республика Татарстан, г. Казань, ул. Хайдара Бигичева, д. 26",
+          "url": "https://edu.tatar.ru/sovetcki/mou_174/page5407697.htm",
+          "sourceUrl": "https://edu.tatar.ru/sovetcki/mou_174/page5407697.htm",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": ["Москва", "Санкт-Петербург"],
+      "sources": [
+        "https://kvantorium.unitech-mo.ru/o_proekte",
+        "http://kvantorium.ru/1/tehnopark/",
+        "https://roskvantorium.ru",
+        "https://kvantorium54.ru/about/",
+        "https://kvantorium52.ru/info/",
+        "http://kvantoriumvrn.ru/o-nas",
+        "https://kvantorium-don.ru/about-kvantorium",
+        "https://oblsut55.ru/?page_id=5115",
+        "https://kvant.dm-centre.ru/about/",
+        "https://kvantorium24.ru/контакты/",
+        "https://kvantorium-perm.ru/org-info/",
+        "https://www.juntech.ru/podrazdeleniya/kvantorium-samara",
+        "https://rtekhnopark.wixsite.com/rdot/osnovnye-svedeniya",
+        "https://robo74.ru/about-us/filials/quantorium",
+        "https://edu.tatar.ru/sovetcki/mou_174/page5407697.htm"
+      ]
+    },
+    {
+      "id": "it-cube",
+      "name": "Центр цифрового образования «IT-куб»",
+      "shortName": "IT-куб",
+      "officialUrl": "https://it-cube.ficto.ru/",
+      "kind": "state",
+      "priceNote": "Бесплатно",
+      "ageRange": "7–17 лет",
+      "summary": "Федеральная сеть центров цифрового образования детей, где школьники бесплатно осваивают программирование и цифровые технологии по стандартизированным трекам; федеральный оператор — ФГАНУ «Федеральный институт цифровой трансформации в сфере образования».",
+      "directions": ["programming-web", "ai-data", "cybersecurity", "robotics", "gamedev"],
+      "standardCourseTracks": [
+        "Программирование на Python",
+        "Разработка VR/AR-приложений",
+        "Мобильная разработка",
+        "Кибергигиена и работа с большими данными",
+        "Системное администрирование",
+        "Основы алгоритмики и логики",
+        "Программирование роботов",
+        "Программирование на Java"
+      ],
+      "branches": [
+        {
+          "city": "Екатеринбург",
+          "name": "Центр цифрового образования детей «IT-куб. Уралмаш» (структурное подразделение ГАНОУ СО «Дворец молодёжи»)",
+          "address": "г. Екатеринбург, ул. Красных Командиров, д. 11а",
+          "url": "https://itcube.dm-centre.ru/about/",
+          "sourceUrl": "https://dm-centre.ru/centers/it-cube/",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Центр цифрового образования детей «IT-куб» (на базе ГАПОУ «Международный центр компетенций — Казанский техникум информационных технологий и связи»)",
+          "address": "420061, Республика Татарстан, г. Казань, ул. Галеева, д. 3А",
+          "url": "https://mck-ktits.ru/itcube/about/",
+          "sourceUrl": "https://mck-ktits.ru/itcube/about/",
+          "verified": true
+        },
+        {
+          "city": "Пермь",
+          "name": "Центр цифрового образования «IT-куб. Пермь»",
+          "address": "г. Пермь, ул. Чернышевского, д. 28",
+          "url": "https://itcube59.ru/",
+          "sourceUrl": "https://itcube59.ru/",
+          "verified": false,
+          "note": "Адрес взят из главной страницы официального регионального сайта (highlight поиска); саму страницу целиком открыть не удалось, поэтому verified=false."
+        }
+      ],
+      "citiesUnverified": ["Москва", "Санкт-Петербург", "Новосибирск", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Уфа", "Красноярск", "Воронеж", "Нижний Новгород"],
+      "sources": [
+        "https://it-cube.ficto.ru/",
+        "https://ficto.ru/",
+        "https://dm-centre.ru/centers/it-cube/",
+        "https://itcube.dm-centre.ru/about/",
+        "https://mck-ktits.ru/itcube/about/",
+        "https://itcube59.ru/",
+        "https://itcube.stavdeti.ru/about/"
+      ]
+    },
+    {
+      "id": "tochka-rosta",
+      "name": "Центр образования естественно-научной и технологической направленностей «Точка роста»",
+      "shortName": "Точка роста",
+      "officialUrl": "https://mpcenter.ru/",
+      "kind": "state",
+      "priceNote": "Бесплатно",
+      "ageRange": "7–18 лет (школьники)",
+      "summary": "Федеральная сеть образовательных центров при школах в сельской местности и малых городах (до 60 тыс. жителей), дающих бесплатные программы естественно-научной и технологической направленности; федеральный оператор — ФГАУ «Центр просветительских инициатив Министерства просвещения РФ».",
+      "directions": ["robotics", "programming-web", "engineering-graphics", "bioengineering"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "По дизайну проект создаётся ТОЛЬКО в сельской местности и малых городах, поэтому в 14 целевых крупных городах отдельных центров «Точка роста», как правило, нет. Конкретные школьные площадки не приводятся, так как ни одна из них не относится к целевым городам.",
+      "sources": [
+        "https://mpcenter.ru/",
+        "https://rahyvsevobr.gosuslugi.ru/tochka-rosta/",
+        "https://outavr.gosuslugi.ru/netcat_files/69/981/Pis_mo_Minprosvescheniya_Rossii_ot_31.05.2022_g._TV_97702_O_napravlenii_metodicheskih_rekomendatsiy_Tochka_rosta_1.pdf"
+      ]
+    },
+    {
+      "id": "regional-sirius-centres",
+      "name": "Региональные центры выявления, поддержки и развития способностей и талантов у детей и молодёжи (модель Образовательного центра «Сириус»)",
+      "shortName": "Региональные центры (модель «Сириус»)",
+      "officialUrl": "https://sochisirius.ru/regions-centers",
+      "kind": "state",
+      "priceNote": "Бесплатно (отбор на программы на конкурсной основе)",
+      "ageRange": "примерно 10–18 лет (обычно 5–11 классы)",
+      "summary": "Федеральная сеть из 85 региональных центров (по одному на субъект РФ), созданных по модели Образовательного центра «Сириус» для выявления и развития одарённых детей в науке, спорте и искусстве; каждый центр использует собственный бренд и название.",
+      "directions": ["ai-data", "robotics", "programming-web", "bioengineering"],
+      "branches": [
+        {
+          "city": "Санкт-Петербург",
+          "name": "Региональный центр выявления и поддержки одарённых детей ГБНОУ «Академия талантов» Санкт-Петербурга",
+          "address": "г. Санкт-Петербург, наб. реки Малой Невки, д. 1, лит. А (Каменноостровский дворец)",
+          "url": "https://academtalant.ru/company_details/",
+          "sourceUrl": "https://academtalant.ru/company_details/",
+          "verified": true
+        },
+        {
+          "city": "Челябинск",
+          "name": "ГБУ ДО «Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи Челябинской области «Курчатов Центр»",
+          "address": "454014, г. Челябинск, ул. Ворошилова, д. 2",
+          "url": "https://kc74.ru/kontakty/",
+          "sourceUrl": "https://kc74.ru/kontakty/",
+          "verified": true
+        },
+        {
+          "city": "Ростов-на-Дону",
+          "name": "ГБУ ДО РО «Региональный центр выявления и поддержки одарённых детей «Ступени успеха»",
+          "address": "344002, г. Ростов-на-Дону, ул. Тургеневская, д. 48а/14",
+          "url": "https://stupeni-uspeha.ru/o-nas/kontaktyi",
+          "sourceUrl": "https://stupeni-uspeha.ru/o-nas/kontaktyi",
+          "verified": true
+        },
+        {
+          "city": "Екатеринбург",
+          "name": "Нетиповая образовательная организация Свердловской области «Фонд поддержки талантливых детей и молодёжи «Золотое сечение»",
+          "url": "https://zsfond.ru/sveden/osnovnye-svedeniya/",
+          "sourceUrl": "https://zsfond.ru/sveden/osnovnye-svedeniya/",
+          "verified": true,
+          "note": "Организация и город (Екатеринбург, Свердловская область) подтверждены на официальном сайте; точный уличный адрес на открытой странице не зафиксирован, поэтому поле address опущено."
+        },
+        {
+          "city": "Красноярск",
+          "name": "Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи Красноярского края «Спутник» (структурное подразделение КГАОУ «Школа космонавтики»)",
+          "url": "https://cosmoschool.ru/regional_center",
+          "sourceUrl": "https://cosmoschool.ru/regional_center",
+          "verified": true,
+          "note": "Организация подтверждена на официальном сайте; сайт «Школы космонавтики» расположен в Железногорске/Красноярском крае, точный адрес центра на открытой странице не зафиксирован, поэтому address опущен."
+        },
+        {
+          "city": "Уфа",
+          "name": "ГАОУ ДО «Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи Республики Башкортостан «Аврора»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru (таблица открыта и прочитана); отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Казань",
+          "name": "АНО «Казанский открытый университет талантов 2.0» — Республиканский центр выявления и поддержки одарённых детей и молодёжи в Республике Татарстан по модели ОЦ «Сириус»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Омск",
+          "name": "Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи Омской области «Сириус 55»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Новосибирск",
+          "name": "Региональный центр «Альтаир» — структурное подразделение ГАУ ДО НСО «Областной центр развития творчества детей и юношества»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Самара",
+          "name": "ГБНОУ «Самарский региональный центр для одарённых детей»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Пермь",
+          "name": "ГБОУ «Академия первых» (Пермский край)",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи «Вега» (Нижегородская область)",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        },
+        {
+          "city": "Воронеж",
+          "name": "ГАНОУ Воронежской области «Региональный центр выявления, поддержки и развития способностей и талантов у детей и молодёжи «Орион»",
+          "url": "https://sochisirius.ru/regions-centers",
+          "sourceUrl": "https://sochisirius.ru/regions-centers",
+          "verified": true,
+          "note": "Название подтверждено по федеральному реестру региональных центров на sochisirius.ru; отдельная официальная страница центра не открывалась, адрес опущен."
+        }
+      ],
+      "citiesUnverified": ["Москва"],
+      "coverageNote": "Москва (город федерального значения) не входит отдельной строкой в федеральный реестр региональных центров модели «Сириус» на sochisirius.ru (в списке — Московская область с центром «Взлёт»). Все прочие 13 целевых городов покрыты.",
+      "sources": [
+        "https://sochisirius.ru/regions-centers",
+        "https://sochisirius.ru/regions-info",
+        "https://academtalant.ru/company_details/",
+        "https://kc74.ru/kontakty/",
+        "https://stupeni-uspeha.ru/o-nas/kontaktyi",
+        "https://zsfond.ru/sveden/osnovnye-svedeniya/",
+        "https://cosmoschool.ru/regional_center"
+      ]
+    },
+    {
+      "id": "dnk",
+      "name": "Дом научной коллаборации (ДНК)",
+      "shortName": "ДНК",
+      "officialUrl": "https://sochisirius.ru/",
+      "kind": "state",
+      "priceNote": "Бесплатно",
+      "ageRange": "5–17 лет (в основном 5–11 классы)",
+      "summary": "Федеральная сеть центров дополнительного образования детей при университетах (около 30 центров в 27 регионах), созданных в рамках федерального проекта «Успех каждого ребёнка» нацпроекта «Образование», где школьники ведут проектную и исследовательскую работу на базе вуза.",
+      "directions": ["programming-web", "robotics", "ai-data", "bioengineering", "engineering-graphics"],
+      "branches": [
+        {
+          "city": "Ростов-на-Дону",
+          "name": "Дом научной коллаборации имени А.С. Попова на базе Донского государственного технического университета (ДГТУ)",
+          "url": "https://dnk-rostobl.donstu.ru/",
+          "sourceUrl": "https://dnk-rostobl.donstu.ru/",
+          "verified": true,
+          "note": "Организация и город подтверждены на официальном сайте вуза (страница открыта); отдельный уличный адрес центра на открытой странице не зафиксирован, поэтому address опущен (ДГТУ находится в Ростове-на-Дону, пл. Гагарина, 1)."
+        }
+      ],
+      "citiesUnverified": [],
+      "coverageNote": "ДНК создаются при вузах и есть далеко не в каждом крупном городе. Среди 14 целевых городов достоверно подтверждён только Ростов-на-Дону (ДГТУ). Для остальных целевых городов наличие ДНК в рамках данного исследования не подтверждено официальными страницами; известные примеры сети (НовГУ, ДВФУ, БГУ, МГУ им. Огарёва) находятся вне целевого списка.",
+      "sources": [
+        "https://dnk-rostobl.donstu.ru/",
+        "http://dnk-dvfu.ru/",
+        "https://dnk.novsu.ru/",
+        "https://dnk.mrsu.ru/o-dnk/"
+      ]
+    },
+    {
+      "id": "mobilnyy-kvantorium",
+      "name": "Мобильный технопарк «Кванториум»",
+      "shortName": "Мобильный Кванториум",
+      "officialUrl": "https://roskvantorium.ru",
+      "kind": "state",
+      "priceNote": "Бесплатно",
+      "ageRange": "примерно 10–18 лет (школьники)",
+      "summary": "Передвижные автомобильные комплексы с высокотехнологичным оборудованием, реализующие программы инженерной направленности «Кванториум» для детей из сельской местности и малых населённых пунктов; часть федеральной сети «Кванториум».",
+      "directions": ["robotics", "programming-web", "engineering-graphics", "drone-piloting"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "По назначению мобильные технопарки обслуживают сельскую местность и малые города своего региона, а не крупные города-центры. Подтверждено существование мобильных площадок в Новосибирской и Нижегородской областях (на официальных сайтах региональных Кванториумов), но конкретных городских адресов в целевых 14 городах нет.",
+      "sources": [
+        "https://kvantorium54.ru/about/",
+        "https://kvantorium52.ru/info/",
+        "http://www.kvantorium.ru/mobilnyy-tehnopark/osnovnye-svedeniya/"
+      ]
+    },
+    {
+      "id": "moscow-technoparks",
+      "name": "Детские технопарки Москвы (включая «Кванториум»)",
+      "shortName": "Детские технопарки Москвы",
+      "officialUrl": "https://technopark-kids.ru/",
+      "kind": "state",
+      "priceNote": "Бесплатно",
+      "ageRange": "7–18 лет",
+      "summary": "Городская (муниципальная) сеть из 21 детского технопарка во всех округах Москвы для профориентации и развития технических навыков; учебные программы разрабатываются с ведущими московскими вузами, и в состав сети входит детский технопарк «Кванториум» в технополисе «Москва».",
+      "directions": ["robotics", "programming-web", "engineering-graphics", "design-project", "bioengineering", "ai-data", "3d-printing", "drone-piloting"],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Детские технопарки Москвы (сеть из 21 технопарка; включает детский технопарк «Кванториум» в технополисе «Москва»)",
+          "url": "https://technopark-kids.ru/",
+          "sourceUrl": "https://technopark-kids.ru/",
+          "verified": true,
+          "note": "Существование сети и её состав подтверждены на официальном портале technopark-kids.ru (страница открыта и прочитана). Единый уличный адрес не приводится, так как это сеть из 21 площадки по всему городу; конкретный адрес отдельного технопарка «Кванториум» из официального источника в рамках исследования не зафиксирован, поэтому address опущен."
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://technopark-kids.ru/",
+        "https://www.mos.ru/news/item/77258073/"
+      ]
+    }
+  ]
+}

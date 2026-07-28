@@ -118,6 +118,27 @@ function publicLog(row) {
   return { id: row.id, text: row.log_text, createdAt: row.created_at, date: formatRuDate(row.created_at) };
 }
 
+/** Площадка для очных занятий. `directions` в базе лежит строкой JSON. */
+function publicVenue(row) {
+  return {
+    id: row.id,
+    code: row.code,
+    network: row.network,
+    name: row.name,
+    org: row.org,
+    city: row.city,
+    address: row.address,
+    url: row.url,
+    kind: row.kind,
+    format: row.format,
+    priceNote: row.price_note,
+    ageRange: row.age_range,
+    summary: row.summary,
+    directions: safeJsonArray(row.directions),
+    verified: Boolean(row.verified),
+  };
+}
+
 function publicStoreItem(row) {
   return {
     id: row.id,
@@ -139,6 +160,7 @@ module.exports = {
   publicPortfolioItem,
   publicLog,
   publicStoreItem,
+  publicVenue,
   formatRuDate,
   safeJsonArray,
 };

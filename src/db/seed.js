@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const config = require('../config');
 const { dbRun, dbGet, dbAll, withTransaction } = require('./index');
 const { seedCities } = require('./cities');
+const { seedVenues } = require('./venues');
 
 const contentA = require('./content-a');
 const contentB = require('./content-b');
@@ -239,6 +240,7 @@ async function seedDemoUser() {
 async function seedAll() {
   const graph = await seedConstellations();
   await seedCities();
+  await seedVenues();
   await seedStore();
   await seedAdmin();
   await seedDemoUser();
@@ -250,13 +252,16 @@ async function seedAll() {
            (SELECT COUNT(*) FROM star_edges)     AS edges,
            (SELECT COUNT(*) FROM store_items)    AS store,
            (SELECT COUNT(*) FROM cities)         AS cities,
-           (SELECT COUNT(*) FROM users)          AS users
+           (SELECT COUNT(*) FROM venues)         AS venues,
+           (SELECT COUNT(*) FROM users)          AS users,
+           (SELECT COUNT(DISTINCT city) FROM venues) AS venueCities
   `);
 
   if (!graph.skipped) {
     console.log(
       `[seed] создано: ${counts.constellations} созвездий, ${counts.stars} звёзд, ` +
-        `${counts.edges} связей, ${counts.resources} ресурсов, ${counts.store} товаров`
+        `${counts.edges} связей, ${counts.resources} ресурсов, ${counts.store} товаров, ` +
+        `${counts.venues} площадок в ${counts.venueCities} городах`
     );
   }
   return counts;

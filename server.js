@@ -96,6 +96,7 @@ app.use('/api/diagnostics', require('./src/routes/diagnostics'));
 app.use('/api/progress', require('./src/routes/progress'));
 app.use('/api/portfolio', require('./src/routes/portfolio'));
 app.use('/api/store', require('./src/routes/store'));
+app.use('/api/venues', require('./src/routes/venues'));
 app.use('/api/users', require('./src/routes/users'));
 app.use('/api/ai', require('./src/routes/ai'));
 app.use('/api/admin', require('./src/routes/admin'));

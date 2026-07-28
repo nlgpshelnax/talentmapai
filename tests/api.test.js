@@ -82,9 +82,11 @@ test('seed produced the full merged curriculum', async () => {
   assert.equal(res.status, 200);
   assert.equal(res.body.constellations.length, 14, '14 constellations (10 from spec + 4 from the live DB)');
   assert.equal(res.body.stars.length, 70);
-  assert.ok(res.body.resources.length >= 210, 'three resources per star');
-  // Every star must have all three resource types — the TZ requires offline,
-  // online and tool for each skill.
+  assert.ok(res.body.resources.length >= 140, 'два ресурса на навык: онлайн-курс и инструмент');
+
+  // У каждого навыка должен быть и онлайн-курс, и инструмент. Очные занятия
+  // сюда больше не входят: они переехали в каталог площадок, потому что
+  // привязаны к городу и направлению, а не к отдельному навыку.
   const byStar = new Map();
   for (const r of res.body.resources) {
     if (!byStar.has(r.starId)) byStar.set(r.starId, new Set());
@@ -92,8 +94,21 @@ test('seed produced the full merged curriculum', async () => {
   }
   for (const star of res.body.stars) {
     const types = byStar.get(star.id);
-    assert.ok(types && types.size === 3, `star ${star.id} (${star.name}) must have all 3 resource types`);
+    assert.ok(types?.has('online'), `у навыка ${star.id} (${star.name}) нет онлайн-курса`);
+    assert.ok(types?.has('tool'), `у навыка ${star.id} (${star.name}) нет инструмента`);
+    assert.ok(!types?.has('offline'), `у навыка ${star.id} остался офлайн-ресурс — они должны быть в каталоге площадок`);
   }
+});
+
+test('REGRESSION: у каждого направления есть очные площадки', async () => {
+  const state = await auth(request(app).get('/api/app-state'), demoToken);
+  const empty = [];
+  for (const c of state.body.constellations) {
+    const res = await auth(request(app).get('/api/venues').query({ constellationId: c.id }), demoToken);
+    const total = res.body.local.length + res.body.elsewhere.length + res.body.anywhere.length;
+    if (!total) empty.push(c.name);
+  }
+  assert.equal(empty.length, 0, `направления без площадок: ${empty.join(', ')}`);
 });
 
 /* -------------------------------------------------------------------- auth */
@@ -905,4 +920,84 @@ test('unknown API routes return JSON 404, not the SPA shell', async () => {
   const res = await request(app).get('/api/does-not-exist');
   assert.equal(res.status, 404);
   assert.match(res.headers['content-type'], /json/);
+});
+
+/* ------------------------------------------------------------------ venues */
+
+test('каталог площадок отдаёт три корзины: свой город, другие, откуда угодно', async () => {
+  const res = await auth(request(app).get('/api/venues').query({ key: 'computer-graphics' }), demoToken);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.city, 'Москва', 'город берётся из профиля');
+  assert.ok(res.body.local.length > 0, 'в Москве есть площадки по графике');
+  assert.ok(Array.isArray(res.body.elsewhere));
+  assert.ok(Array.isArray(res.body.anywhere));
+
+  for (const v of res.body.local) {
+    assert.equal(v.city, 'Москва');
+    assert.ok(v.directions.includes('computer-graphics'), 'в корзину попали только площадки этого направления');
+  }
+});
+
+test('REGRESSION: в каталоге нет доменов-заглушек', async () => {
+  const res = await auth(request(app).get('/api/venues'), demoToken);
+  assert.equal(res.status, 200);
+  const all = [...res.body.local, ...res.body.elsewhere, ...res.body.anywhere];
+  // Прототип раздавал ссылки вида https://example-kvantorium.ru — выглядело
+  // как настоящий каталог, вело в никуда.
+  const fake = all.filter((v) => v.url && /(^|\.)(example|test|placeholder)[-.]/i.test(new URL(v.url).hostname));
+  assert.equal(fake.length, 0, `выдуманные домены: ${fake.map((v) => v.url).join(', ')}`);
+  assert.ok(all.every((v) => v.url), 'у каждой площадки есть ссылка');
+});
+
+test('REGRESSION: город запроса перекрывает город профиля', async () => {
+  const res = await auth(
+    request(app).get('/api/venues').query({ key: 'robotics', city: 'Новосибирск' }),
+    demoToken
+  );
+  assert.equal(res.status, 200);
+  assert.equal(res.body.city, 'Новосибирск');
+  assert.ok(res.body.local.length > 0, 'в Новосибирске есть робототехника');
+  assert.ok(
+    res.body.local.every((v) => v.city === 'Новосибирск'),
+    'в «своём городе» только площадки этого города'
+  );
+  assert.ok(
+    res.body.elsewhere.every((v) => v.city !== 'Новосибирск'),
+    'город не дублируется в «других городах»'
+  );
+});
+
+test('каждое направление покрыто хотя бы в десяти городах', async () => {
+  // Ключи берём из самого приложения: список, переписанный руками, однажды уже
+  // разошёлся с контентом на один символ, и целое направление осталось без
+  // площадок, а тест этого не заметил.
+  const state = await auth(request(app).get('/api/app-state'), demoToken);
+  const keys = state.body.constellations.map((c) => c.key);
+  assert.equal(keys.length, 14);
+  const thin = [];
+  for (const key of keys) {
+    const res = await auth(request(app).get('/api/venues').query({ key }), demoToken);
+    const all = [...res.body.local, ...res.body.elsewhere];
+    const cities = new Set(all.map((v) => v.city));
+    if (cities.size < 10) thin.push(`${key}: ${cities.size}`);
+  }
+  assert.equal(thin.length, 0, `направления с узким покрытием: ${thin.join(', ')}`);
+});
+
+test('в каждом из четырнадцати крупных городов есть хотя бы одна площадка', async () => {
+  const cities = [
+    'Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань', 'Нижний Новгород',
+    'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону', 'Уфа', 'Красноярск', 'Пермь', 'Воронеж',
+  ];
+  const empty = [];
+  for (const city of cities) {
+    const res = await auth(request(app).get('/api/venues').query({ city }), demoToken);
+    if (!res.body.local.length) empty.push(city);
+  }
+  assert.equal(empty.length, 0, `города без площадок: ${empty.join(', ')}`);
+});
+
+test('каталог закрыт для неавторизованных', async () => {
+  const res = await request(app).get('/api/venues');
+  assert.equal(res.status, 401);
 });

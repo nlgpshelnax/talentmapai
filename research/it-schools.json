@@ -1,0 +1,291 @@
+{
+  "researchedAt": "2026-07-29",
+  "note": "Каждая запись прослеживается до страницы, которую агент реально открыл. Адреса указаны ТОЛЬКО там, где они подтверждены на собственном домене организации. Для сетей-франшайзи (Алгоритмика, Роботрек) и площадок с ротацией (Coddy, Яндекс Лицей) уличные адреса опущены, а присутствие в городе подтверждается собственной поддоменной/городской страницей организации, если она открывалась. Города без прямого подтверждения помещены в citiesUnverified.",
+  "targetCities": ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Уфа", "Красноярск", "Пермь", "Воронеж"],
+  "schools": [
+    {
+      "id": "algoritmika",
+      "name": "Алгоритмика",
+      "officialUrl": "https://algoritmika.org",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте (есть бесплатный пробный урок)",
+      "ageRange": "6–17 лет",
+      "summary": "Международная сеть-франчайзи школ программирования для детей с курсами по Scratch, Python, веб-разработке, созданию игр и графическому дизайну; есть образовательная лицензия Департамента образования Москвы.",
+      "directions": ["programming-web", "gamedev", "computer-graphics", "ai-data"],
+      "branches": [],
+      "citiesUnverified": ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Уфа", "Красноярск", "Пермь", "Воронеж"],
+      "coverageNote": "Собственный сайт заявляет 450 городов присутствия франчайзи-партнёров, но страница выбора города (/cities) при обращении возвращала ошибку 500, поэтому конкретные городские адреса/URL не подтверждены. Присутствие в 14 целевых городах крайне вероятно, но не проверено поштучно.",
+      "sources": ["https://algoritmika.org/ru"]
+    },
+    {
+      "id": "kodabra",
+      "name": "Кодабра",
+      "officialUrl": "https://codabra.org",
+      "kind": "commercial",
+      "format": "online",
+      "priceNote": "Платно, от ~4 490 руб./мес за курс (первое занятие бесплатно)",
+      "ageRange": "6–17 лет",
+      "summary": "Онлайн-школа цифрового творчества для детей с курсами по Scratch, Roblox, Unity, Python, веб-разработке, Minecraft и кибербезопасности; занятия идут онлайн в мини-группах.",
+      "directions": ["gamedev", "programming-web", "cybersecurity", "media-content"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "Формат онлайн — обучение доступно из любого города без привязки к филиалу. Собственный сайт (codabra.turbo.site) прямо называет школу онлайн-школой; исторически были очные площадки (напр. группа ВК codabra_spb), но подтверждённой очной сети по целевым городам нет.",
+      "sources": ["https://codabra.turbo.site/"]
+    },
+    {
+      "id": "pixel",
+      "name": "Школа программирования «Пиксель»",
+      "officialUrl": "https://clubpixel.ru",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте (есть рассрочка, налоговый вычет 13%, бесплатное пробное занятие)",
+      "ageRange": "5–17 лет",
+      "summary": "Федеральная сеть из ~40 очных филиалов в Москве и Московской области плюс онлайн-обучение по программированию и робототехнике для детей; работает с 2017 года по государственной лицензии.",
+      "directions": ["programming-web", "robotics", "gamedev", "computer-graphics"],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Пиксель — филиал «Медведково» (языковой центр ABC Family)",
+          "address": "г. Москва, Студёный проезд, д. 14",
+          "url": "https://clubpixel.ru/moscow66",
+          "verified": true
+        },
+        {
+          "city": "Москва",
+          "name": "Пиксель — филиал на ул. Амундсена",
+          "address": "г. Москва, ул. Амундсена, д. 15, к. 1",
+          "url": "https://clubpixel.ru/moscow45",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "coverageNote": "Собственный сайт прямо указывает, что сеть очных филиалов охватывает только Москву и Московскую область (~40 филиалов). За пределами МО присутствие только в онлайн-формате. Для продукта по 14 городам покрытие тонкое — фактически один регион.",
+      "sources": ["https://clubpixel.ru/", "https://clubpixel.ru/moscow66", "https://clubpixel.ru/moscow45"]
+    },
+    {
+      "id": "yandex-lyceum",
+      "name": "Яндекс Лицей",
+      "officialUrl": "https://lyceum.yandex.ru",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Бесплатно (конкурсный отбор)",
+      "ageRange": "13–20 лет",
+      "summary": "Бесплатная двухлетняя очная программа Академии Яндекса по программированию на Python для школьников и студентов ссузов; занятия ведут на площадках в 156 городах России (детские технопарки, вузы, школы, центры допобразования).",
+      "directions": ["programming-web", "ai-data"],
+      "branches": [],
+      "citiesUnverified": ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань", "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Уфа", "Красноярск", "Пермь", "Воронеж"],
+      "coverageNote": "Собственный сайт подтверждает 156 городов и 295 очных площадок и наличие страницы со списком городов, но конкретные городские адреса/URL для целевых городов не открывались поштучно, поэтому они помечены как неподтверждённые. Есть также бесплатные онлайн-программы (самостоятельные и интенсивы) — отдельный онлайн-формат.",
+      "sources": ["https://lyceum.yandex.ru/python", "https://yandex.ru/support/lyceum/ru/", "https://lyceum.yandex.ru/kursy-programmirovaniya-dlya-detej-i-shkolnikov"]
+    },
+    {
+      "id": "school-21",
+      "name": "Школа 21 (Сбер)",
+      "officialUrl": "https://21-school.ru",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Бесплатно",
+      "ageRange": "18+ (отборочный «бассейн» с 17 лет с согласия родителей)",
+      "summary": "Бесплатная школа цифровых технологий от Сбера по методике «Школы будущего» (Ecole 42), без преподавателей, лекций и оценок; кампусы работают 24/7 в ряде городов России.",
+      "directions": ["programming-web", "ai-data", "cybersecurity", "design-project"],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Кампус «Школы 21» в Москве",
+          "address": "г. Москва, ул. Вятская, д. 27, стр. 42",
+          "url": "https://21-school.ru/campuses/kampus-skoly-21-v-moskve",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Кампус «Школы 21» в Казани",
+          "address": "г. Казань, ул. Спартаковская, д. 2, корп. 2",
+          "url": "https://21-school.ru/campuses/kampus-skoly-21-v-kazani",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": ["Новосибирск", "Нижний Новгород", "Челябинск", "Омск", "Уфа", "Пермь"],
+      "coverageNote": "ВНИМАНИЕ: минимальный возраст основного обучения — 18 лет (отбор с 17 лет), поэтому программа фактически НЕ подходит для детского продукта 7–18. Включена для полноты. По собственному сайту наборы также анонсированы в Челябинске, Перми, Новосибирске, Нижнем Новгороде, Уфе, Омске и др., но отдельные городские страницы для них не открывались — помечены как неподтверждённые.",
+      "sources": ["https://21-school.ru/", "https://21-school.ru/campuses/kampus-skoly-21-v-moskve", "https://21-school.ru/campuses/kampus-skoly-21-v-kazani"]
+    },
+    {
+      "id": "top-academy",
+      "name": "Компьютерная Академия ТОП (ранее «Академия ШАГ»)",
+      "officialUrl": "https://top-academy.ru",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте (часть программ бесплатна по гос. проектам «Код будущего», «Технолето»)",
+      "ageRange": "7–18 лет (детские курсы); есть ИТ-колледж 14–18+",
+      "summary": "Крупнейшая международная сеть ИТ-образования с филиалами более чем в 230 городах; детское направление 7–18 лет включает робототехнику, программирование, разработку игр, компьютерную грамотность и безопасность в интернете.",
+      "directions": ["programming-web", "robotics", "gamedev", "computer-graphics", "cybersecurity", "ai-data"],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Академия ТОП — филиал «Коломенская»",
+          "address": "г. Москва, м. Коломенская, ул. Нагатинская, д. 29, к. 4",
+          "url": "https://msk.top-academy.ru/",
+          "verified": true
+        },
+        {
+          "city": "Санкт-Петербург",
+          "name": "Академия ТОП — филиал «Невский проспект / Гостиный двор»",
+          "address": "г. Санкт-Петербург, м. Невский проспект / Гостиный двор, ул. Итальянская, д. 2",
+          "url": "https://spb.top-academy.ru/education/children",
+          "verified": true
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Академия ТОП — филиал «Горьковская»",
+          "address": "г. Нижний Новгород, м. Горьковская, ул. Пискунова, д. 59",
+          "url": "https://nn.top-academy.ru/",
+          "verified": true
+        },
+        {
+          "city": "Новосибирск",
+          "name": "Академия ТОП в Новосибирске",
+          "url": "https://nsk.top-academy.ru/",
+          "verified": true
+        },
+        {
+          "city": "Ростов-на-Дону",
+          "name": "Академия ТОП в Ростове-на-Дону",
+          "url": "https://rostov.top-academy.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": ["Екатеринбург", "Казань", "Челябинск", "Самара", "Омск", "Уфа", "Красноярск", "Пермь", "Воронеж"],
+      "coverageNote": "Собственный сайт заявляет 500+ филиалов в 230+ городах; часть городских поддоменов защищена DDoS-Guard и не отдавала контент автоматически, поэтому уличные адреса подтверждены для Москвы, СПб и Нижнего Новгорода, а Новосибирск и Ростов-на-Дону подтверждены на уровне города по собственным поддоменам. Остальные целевые города почти наверняка присутствуют (у сети типовые поддомены), но не проверены поштучно.",
+      "sources": ["https://top-academy.ru/", "https://msk.top-academy.ru/", "https://spb.top-academy.ru/education/children", "https://nn.top-academy.ru/", "https://nsk.top-academy.ru/", "https://rostov.top-academy.ru/"]
+    },
+    {
+      "id": "liga-robotov",
+      "name": "Лига Роботов",
+      "officialUrl": "https://ligarobotov.ru",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Платно, уточняйте на сайте (есть образовательная лицензия, пробное занятие со скидкой)",
+      "ageRange": "5–17 лет",
+      "summary": "Международная сеть школ робототехники и программирования для детей (250 филиалов в 56 городах и 5 странах, учат с 2011 года); курсы по робо-конструированию, робототехнике, Scratch, Python и программированию в Minecraft.",
+      "directions": ["robotics", "programming-web", "gamedev"],
+      "branches": [
+        {
+          "city": "Новосибирск",
+          "name": "Лига Роботов в Новосибирске",
+          "url": "https://ligarobotov.ru/",
+          "verified": true
+        },
+        {
+          "city": "Санкт-Петербург",
+          "name": "Лига Роботов в Санкт-Петербурге",
+          "url": "https://spb.ligarobotov.ru/",
+          "verified": true
+        },
+        {
+          "city": "Екатеринбург",
+          "name": "Лига Роботов в Екатеринбурге",
+          "url": "https://ekb.ligarobotov.ru/",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Лига Роботов в Казани",
+          "url": "https://kazan.ligarobotov.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": ["Москва", "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Уфа", "Красноярск", "Пермь", "Воронеж"],
+      "coverageNote": "Присутствие подтверждено на уровне города по собственным городским поддоменам (Новосибирск — головной, СПб, Екатеринбург, Казань). Уличные адреса опущены: сайт на Tilda подгружает список филиалов динамически и геоопределяет город, из-за чего адрес конкретного филиала не удалось надёжно снять из собственных данных организации. Целевые города вероятно покрыты (сеть в 56 городах), но не подтверждены поштучно.",
+      "sources": ["https://ligarobotov.ru/", "https://spb.ligarobotov.ru/", "https://ekb.ligarobotov.ru/", "https://kazan.ligarobotov.ru/"]
+    },
+    {
+      "id": "robotrek",
+      "name": "Роботрек",
+      "officialUrl": "https://robotrack-rus.ru",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Платно, уточняйте на сайте",
+      "ageRange": "5–16 лет",
+      "summary": "Международная сеть клубов образовательной робототехники (проект ООО «Брейн Девелопмент», более 100 лицензированных клубов в России и Казахстане, свыше 40 000 учеников) на конструкторах Huna/MRT; включает нейротехнологии и инклюзивные программы.",
+      "directions": ["robotics", "3d-printing", "engineering-graphics"],
+      "branches": [],
+      "citiesUnverified": ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону", "Красноярск", "Воронеж"],
+      "coverageNote": "Собственный сайт подтверждает статус сети из 100+ клубов и возрастной охват 5–16, но НЕ публикует на главной перечень городов с адресами (сайт ориентирован на франшизу). Список городов присутствия встречается только на сторонних агрегаторах о франшизе, поэтому конкретные города помечены как неподтверждённые и адреса не приводятся.",
+      "sources": ["https://robotrack-rus.ru/"]
+    },
+    {
+      "id": "coddy",
+      "name": "Coddy School",
+      "officialUrl": "https://coddyschool.com",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, групповые от ~3 600–5 800 руб./мес в зависимости от города (есть онлайн и очный форматы)",
+      "ageRange": "4–16 лет (в части городов 3–16 / 7–17)",
+      "summary": "Международная школа программирования для детей (с 2016 года) с очными и онлайн-занятиями в мини-группах и индивидуально, в том числе в офисах ИТ-компаний-партнёров; курсы по Scratch, Python, созданию игр (Roblox, Unity), веб-разработке, дизайну и кибербезопасности.",
+      "directions": ["programming-web", "gamedev", "cybersecurity", "design-project", "ai-data"],
+      "branches": [
+        { "city": "Москва", "name": "Coddy в Москве", "url": "https://coddyschool.com/", "verified": true },
+        { "city": "Санкт-Петербург", "name": "Coddy в Санкт-Петербурге", "url": "https://spb.coddyschool.com/", "verified": false },
+        { "city": "Новосибирск", "name": "Coddy в Новосибирске", "url": "https://nsk.coddyschool.com/", "verified": true },
+        { "city": "Екатеринбург", "name": "Coddy в Екатеринбурге", "url": "https://ekb.coddyschool.com/", "verified": true },
+        { "city": "Казань", "name": "Coddy в Казани", "url": "https://kazan.coddyschool.com/", "verified": true },
+        { "city": "Нижний Новгород", "name": "Coddy в Нижнем Новгороде", "url": "https://nnovgorod.coddyschool.com/", "verified": true },
+        { "city": "Челябинск", "name": "Coddy в Челябинске", "url": "https://chelyabinsk.coddyschool.com/", "verified": true },
+        { "city": "Самара", "name": "Coddy в Самаре", "url": "https://samara.coddyschool.com/", "verified": true },
+        { "city": "Омск", "name": "Coddy в Омске", "url": "https://omsk.coddyschool.com/", "verified": true },
+        { "city": "Ростов-на-Дону", "name": "Coddy в Ростове-на-Дону", "url": "https://rostov.coddyschool.com/", "verified": true },
+        { "city": "Уфа", "name": "Coddy в Уфе", "url": "https://ufa.coddyschool.com/", "verified": true },
+        { "city": "Красноярск", "name": "Coddy в Красноярске", "url": "https://krasnoyarsk.coddyschool.com/", "verified": true },
+        { "city": "Пермь", "name": "Coddy в Перми", "url": "https://perm.coddyschool.com/", "verified": true },
+        { "city": "Воронеж", "name": "Coddy в Воронеже", "url": "https://voronezh.coddyschool.com/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "coverageNote": "Присутствие подтверждено по собственным городским поддоменам во всех целевых городах, кроме Санкт-Петербурга (поддомен spb.coddyschool.com не открывался в ходе исследования — помечен verified:false). Уличные адреса опущены: занятия проходят на ротируемых площадках (офисы ИТ-компаний-партнёров и школы), поэтому постоянного адреса филиала на собственных страницах, как правило, нет. Лучшее покрытие по 14 городам среди коммерческих сетей.",
+      "sources": ["https://coddyschool.com/", "https://nnovgorod.coddyschool.com/", "https://ekb.coddyschool.com/", "https://kazan.coddyschool.com/", "https://rostov.coddyschool.com/", "https://ufa.coddyschool.com/", "https://chelyabinsk.coddyschool.com/", "https://krasnoyarsk.coddyschool.com/", "https://perm.coddyschool.com/", "https://voronezh.coddyschool.com/", "https://omsk.coddyschool.com/", "https://samara.coddyschool.com/", "https://nsk.coddyschool.com/"]
+    },
+    {
+      "id": "skillbox-kids",
+      "name": "Skillbox Kids",
+      "officialUrl": "https://kids.skillbox.ru",
+      "kind": "commercial",
+      "format": "online",
+      "priceNote": "Платно, уточняйте на сайте (первый урок бесплатно, скидки на курсы)",
+      "ageRange": "7–17 лет",
+      "summary": "Онлайн-школа для детей и подростков по ИТ, дизайну и созданию игр (детское направление платформы Skillbox); курсы по Scratch, Python и нейросетям, разработке игр на Unity, программированию и 3D-моделированию в Minecraft, кибербезопасности.",
+      "directions": ["programming-web", "gamedev", "ai-data", "cybersecurity", "computer-graphics"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "Формат онлайн — обучение доступно из любого города без привязки к филиалу. Собственный сайт прямо называет курсы онлайн-курсами для детей 7–17 лет.",
+      "sources": ["https://kids.skillbox.ru/", "https://kids.skillbox.ru/catalog/programming"]
+    },
+    {
+      "id": "vk-education",
+      "name": "VK Education (для школьников)",
+      "officialUrl": "https://education.vk.company/children",
+      "kind": "university",
+      "format": "online",
+      "priceNote": "Бесплатно",
+      "ageRange": "Школьники (в основном 8–11 классы)",
+      "summary": "Бесплатные образовательные проекты VK для школьников: онлайн-курсы по Python, алгоритмам и структурам данных, интерактивный тренажёр на All Cups и олимпиада «Технокубок»; отдельные программы проходят офлайн.",
+      "directions": ["programming-web", "ai-data"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "В основном онлайн-формат (курсы и тренажёр доступны из любого города); собственный сайт отмечает, что отдельные курсы проходят офлайн, но конкретные города/площадки не публикуются единым списком, поэтому отмечено как online.",
+      "sources": ["https://education.vk.company/children", "https://education.vk.company/centrum/code"]
+    },
+    {
+      "id": "t-education-tinkoff",
+      "name": "Т-Образование (Тинькофф Образование)",
+      "officialUrl": "https://education.tbank.ru",
+      "kind": "university",
+      "format": "online",
+      "priceNote": "Бесплатно",
+      "ageRange": "Школьники 4–11 классы (и старше)",
+      "summary": "Бесплатные онлайн-курсы Т-Банка для школьников: «Математика решает» (4–6 классы), «Информатика решает» — олимпиадное программирование на Python (7–11 классы), а также вводные курсы по Android (Kotlin) и iOS (Swift).",
+      "directions": ["programming-web", "ai-data"],
+      "branches": [],
+      "citiesUnverified": [],
+      "coverageNote": "Формат онлайн (платформа Т-Образование), доступ из любого города без привязки к филиалу.",
+      "sources": ["https://education.tbank.ru/school/basic/programming/", "https://education.tbank.ru/it-courses/"]
+    }
+  ]
+}

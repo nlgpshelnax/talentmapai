@@ -1,0 +1,764 @@
+{
+  "researchedAt": "2026-07-29",
+  "organisations": [
+    {
+      "id": "fgdr-russia",
+      "name": "Федерация гонок дронов России (ФГДР)",
+      "officialUrl": "https://fgdr.ru/",
+      "kind": "nonprofit",
+      "format": "offline",
+      "priceNote": "Участие в соревнованиях, как правило, бесплатное; членство и обучение уточняется в региональном отделении",
+      "ageRange": "с 14 лет",
+      "minAgeNote": "По данным регионального отделения (Красноярский край) в соревнованиях участвуют пилоты старше 14 лет; ряд отделений заявляет отсутствие возрастных ограничений на участие в мероприятиях",
+      "summary": "Общероссийская физкультурно-спортивная общественная организация, развивающая гонки на спортивных FPV-дронах, проводящая Всероссийский чемпионат пилотирования дронов для детей и подростков и открывающая школы пилотирования FPV-дронов.",
+      "directions": [
+        "drone-piloting"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Федерация гонок дронов города Москвы",
+          "url": "https://fgdr.ru/contacts/",
+          "verified": true
+        },
+        {
+          "city": "Санкт-Петербург",
+          "name": "Федерация гонок дронов Санкт-Петербурга",
+          "url": "https://vk.com/fgdspb",
+          "verified": true
+        },
+        {
+          "city": "Новосибирск",
+          "name": "Федерация гонок дронов Новосибирской области",
+          "url": "https://vk.com/fgdnso",
+          "verified": true
+        },
+        {
+          "city": "Екатеринбург",
+          "name": "Федерация гонок дронов Свердловской области",
+          "url": "https://vk.com/fgdr_ekb",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Федерация гонок дронов Республики Татарстан",
+          "url": "https://t.me/FDRT116",
+          "verified": true
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Федерация гонок дронов Нижегородской области",
+          "url": "https://t.me/FGDR52",
+          "verified": true
+        },
+        {
+          "city": "Челябинск",
+          "name": "Федерация гонок дронов Челябинской области",
+          "url": "https://vk.com/fgdrus74",
+          "verified": true
+        },
+        {
+          "city": "Самара",
+          "name": "Федерация гонок дронов Самарской области",
+          "url": "https://vk.com/fgd_smr",
+          "verified": true
+        },
+        {
+          "city": "Омск",
+          "name": "Федерация гонок дронов Омской области",
+          "url": "https://vk.com/fgdomsk",
+          "verified": true
+        },
+        {
+          "city": "Ростов-на-Дону",
+          "name": "Федерация гонок дронов Ростовской области",
+          "url": "https://vk.com/fgdrostov",
+          "verified": true
+        },
+        {
+          "city": "Уфа",
+          "name": "Федерация гонок дронов Республики Башкортостан",
+          "url": "https://vk.com/club223517647",
+          "verified": true
+        },
+        {
+          "city": "Красноярск",
+          "name": "Федерация гонок дронов Красноярского края",
+          "url": "https://vk.com/club222343619",
+          "verified": true
+        },
+        {
+          "city": "Пермь",
+          "name": "Федерация гонок дронов (беспилотных воздушных судов и летательных аппаратов) Пермского края",
+          "url": "https://vk.com/fgd59",
+          "verified": true
+        },
+        {
+          "city": "Воронеж",
+          "name": "Воронежское региональное отделение ФГДР",
+          "url": "https://vk.com/fgdr_vrn",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://fgdr.ru/",
+        "https://fgdr.ru/about/",
+        "https://fgdr.ru/regions/",
+        "https://fgdr.ru/contacts/"
+      ]
+    },
+    {
+      "id": "fks-russia",
+      "name": "Федерация компьютерного спорта России (ФКС России)",
+      "officialUrl": "https://resf.ru/",
+      "kind": "nonprofit",
+      "format": "hybrid",
+      "priceNote": "Участие в турнирах и лигах, как правило, бесплатное",
+      "ageRange": "школьники и студенты (см. minAgeNote)",
+      "minAgeNote": "Профильная Школьная лига — с 14 лет; для участников младше 18 лет требуется письменное согласие родителя/законного представителя. Киберспорт для несовершеннолетних возрастно-чувствителен.",
+      "summary": "Общероссийская общественная организация, аккредитованная Минспорта РФ по виду спорта «компьютерный спорт»; представлена региональными отделениями во всех 89 субъектах РФ и проводит Школьную и студенческую киберспортивные лиги.",
+      "directions": [
+        "esports"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Московское отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Санкт-Петербург",
+          "name": "Санкт-Петербургское отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Новосибирск",
+          "name": "Новосибирское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Екатеринбург",
+          "name": "Свердловское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Казань",
+          "name": "Татарстанское республиканское отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Нижегородское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Челябинск",
+          "name": "Челябинское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Самара",
+          "name": "Самарское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Омск",
+          "name": "Омское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Ростов-на-Дону",
+          "name": "Ростовское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Уфа",
+          "name": "Башкирское республиканское отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Красноярск",
+          "name": "Красноярское краевое отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Пермь",
+          "name": "Пермское краевое отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        },
+        {
+          "city": "Воронеж",
+          "name": "Воронежское областное отделение ФКС России",
+          "url": "https://www.resf.ru/about/regions/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://resf.ru/",
+        "https://resf.ru/about/resf/",
+        "https://www.resf.ru/about/regions/",
+        "https://resf.ru/contacts/"
+      ]
+    },
+    {
+      "id": "sunts-msu",
+      "name": "СУНЦ МГУ — Школа-интернат им. А. Н. Колмогорова",
+      "officialUrl": "https://internat.msu.ru/",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Бюджетные (бесплатные) места по итогам конкурсного отбора; есть общежитие для иногородних",
+      "ageRange": "10–11 классы",
+      "minAgeNote": "Приём по конкурсу в старшие классы (профильные отделения, включая биологическое)",
+      "summary": "Специализированный учебно-научный центр МГУ с биологическим отделением и профильными классами, где углублённо изучают молекулярную биологию, биохимию и основы биоинженерии.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "СУНЦ МГУ им. А. Н. Колмогорова",
+          "url": "https://internat.msu.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://internat.msu.ru/"
+      ]
+    },
+    {
+      "id": "sunts-nsu",
+      "name": "СУНЦ НГУ (Физико-математическая школа НГУ)",
+      "officialUrl": "https://sesc.nsu.ru/",
+      "kind": "university",
+      "format": "hybrid",
+      "priceNote": "Обучение по конкурсу; действуют очная и заочная школы, открытые онлайн-курсы",
+      "ageRange": "8–11 классы",
+      "minAgeNote": "Приём по конкурсу; имеется химико-биологический профиль",
+      "summary": "Специализированный учебно-научный центр НГУ в новосибирском Академгородке с химико-биологическим профилем и заочной школой для школьников из других городов.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Новосибирск",
+          "name": "СУНЦ НГУ (ФМШ), Академгородок",
+          "url": "https://sesc.nsu.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://sesc.nsu.ru/"
+      ]
+    },
+    {
+      "id": "sunts-urfu",
+      "name": "СУНЦ УрФУ",
+      "officialUrl": "https://lyceum.urfu.ru/",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Обучение по конкурсу; есть общежитие для иногородних и подготовительные курсы",
+      "ageRange": "8–11 классы",
+      "minAgeNote": "Приём в 8, 9, 10 и 11 классы по конкурсному отбору",
+      "summary": "Специализированный учебно-научный центр УрФУ (создан в 1990 г.) с углублённым обучением по профилям в 8–11 классах, включая естественно-научное направление.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Екатеринбург",
+          "name": "СУНЦ УрФУ",
+          "address": "ул. Данилы Зверева, 30, Екатеринбург",
+          "url": "https://lyceum.urfu.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://lyceum.urfu.ru/"
+      ]
+    },
+    {
+      "id": "agym-spbu",
+      "name": "Академическая гимназия им. Д. К. Фаддеева СПбГУ",
+      "officialUrl": "https://agym.spbu.ru/",
+      "kind": "university",
+      "format": "hybrid",
+      "priceNote": "Обучение по конкурсу; есть кружки (в т.ч. по химии) в очном и дистанционном формате для школьников всех регионов",
+      "ageRange": "8–11 классы (кружки — с 5 класса)",
+      "minAgeNote": "Приём в гимназию по конкурсу; кружок по химии для 5–8 классов открыт для школьников всех регионов очно и дистанционно",
+      "summary": "Специализированный учебно-научный центр СПбГУ с естественно-научной подготовкой и предметными кружками, включая химию и Северо-западную заочную математическую школу.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Санкт-Петербург",
+          "name": "Академическая гимназия им. Д. К. Фаддеева СПбГУ",
+          "url": "https://agym.spbu.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://agym.spbu.ru/"
+      ]
+    },
+    {
+      "id": "sechenov-preuniversary",
+      "name": "Предуниверсарий Сеченовского Университета",
+      "officialUrl": "https://www.sechenov.ru/admissions/priemnaya-kampaniya-2026/preduniversariy-srednee-obshchee-obrazovanie/",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Обучение по конкурсу (вступительные испытания по биологии, химии, математике, русскому языку)",
+      "ageRange": "8–11 классы",
+      "minAgeNote": "Приём по конкурсу на медико-биологический профиль",
+      "summary": "Структурное подразделение Первого МГМУ им. И. М. Сеченова, реализующее среднее общее образование медико-биологической направленности с лабораторной подготовкой и курсом «Шаг в медицину».",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Предуниверсарий Сеченовского Университета",
+          "url": "https://www.sechenov.ru/admissions/priemnaya-kampaniya-2026/preduniversariy-srednee-obshchee-obrazovanie/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://www.sechenov.ru/admissions/priemnaya-kampaniya-2026/preduniversariy-srednee-obshchee-obrazovanie/"
+      ]
+    },
+    {
+      "id": "bio-msu-society",
+      "name": "Кружки биологического факультета МГУ (Школа юного биолога)",
+      "officialUrl": "https://bio.msu.ru/society/",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Посещение кружков бесплатное (отдельные выезды могут быть платными)",
+      "ageRange": "6–11 классы",
+      "minAgeNote": "Кружки не готовят к ЕГЭ; запись обычно с середины августа до середины сентября",
+      "summary": "Система бесплатных биологических кружков при биофаке МГУ (генетика, биофизика, эмбриология, зоология, физиология и др.) для расширения научного кругозора школьников.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Биологический факультет МГУ им. М. В. Ломоносова",
+          "url": "https://bio.msu.ru/society/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://bio.msu.ru/society/"
+      ]
+    },
+    {
+      "id": "voop-darwin",
+      "name": "Биологический кружок ВООП (Дарвиновский музей)",
+      "officialUrl": "https://ecosystema.ru/voop/index.htm",
+      "kind": "nonprofit",
+      "format": "offline",
+      "priceNote": "Бесплатно (кружок при Дарвиновском музее; расходы на экспедиции уточняются)",
+      "ageRange": "с 6–7 класса и студенты до 3 курса",
+      "minAgeNote": "Неформальное объединение; в учебную группу входят школьники начиная с 7 класса (наиболее упорные — с 5–6)",
+      "summary": "Один из старейших биологических кружков России (с 1950 г.) при Дарвиновском музее, ведущий полевую научно-исследовательскую работу, выезды и экспедиции для школьников.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Биологический кружок ВООП при Государственном Дарвиновском музее",
+          "url": "https://ecosystema.ru/voop/index.htm",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://ecosystema.ru/voop/index.htm"
+      ]
+    },
+    {
+      "id": "itmo-start",
+      "name": "ИТМО СТАРТ (программы для школьников Университета ИТМО)",
+      "officialUrl": "https://start.itmo.ru/",
+      "kind": "university",
+      "format": "hybrid",
+      "priceNote": "Есть платные и бесплатные программы; естественно-научные курсы GreenTech School — от 4800 ₽/месяц. Возможны налоговый вычет и оплата материнским капиталом",
+      "ageRange": "1–11 классы (по программам)",
+      "minAgeNote": "Профильные биотехнологические курсы: GreenTech School — 1–11 классы; «Школа биотехнолога» — 10–11 классы; ИТМО.KIDS «Я — биотехнолог» — 9–15 лет",
+      "summary": "Единое образовательное пространство ИТМО для школьников: естественно-научная GreenTech School (биология, химия, биотехнологии), инфохимия, каникулярная «Школа биотехнолога» и курсы ИТМО.KIDS.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Санкт-Петербург",
+          "name": "GreenTech School / ИТМО СТАРТ",
+          "address": "ул. Ломоносова, 9, Санкт-Петербург",
+          "url": "https://greentech.itmo.ru/school",
+          "verified": true
+        },
+        {
+          "city": "Санкт-Петербург",
+          "name": "ИТМО.KIDS",
+          "address": "Биржевая линия, 14, Санкт-Петербург",
+          "url": "http://kids.itmo.ru/bio_tech",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://start.itmo.ru/",
+        "https://greentech.itmo.ru/school",
+        "https://ichem.itmo.ru/school",
+        "http://kids.itmo.ru/bio_tech"
+      ]
+    },
+    {
+      "id": "skoltech-schoolchildren",
+      "name": "Сколтех — занятия и практикумы для школьников",
+      "officialUrl": "https://schoolchildren.skoltech.ru/",
+      "kind": "university",
+      "format": "offline",
+      "priceNote": "Занятия по заявке от школ/групп (стоимость на сайте не указана)",
+      "ageRange": "школьники (класс уточняется при заявке)",
+      "minAgeNote": "Практикумы проводятся по заявке; отдельные национальные олимпиады Сколтеха рассчитаны на студентов, а не школьников",
+      "summary": "Сколковский институт науки и технологий проводит для школьников лабораторные биологические практикумы (выделение ДНК, генетика, микробиология, работа с бактериями) по предварительной заявке.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Сколковский институт науки и технологий (Сколтех)",
+          "url": "https://schoolchildren.skoltech.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://schoolchildren.skoltech.ru/",
+        "https://edu.skoltech.ru/ru/programs/shkolnikam"
+      ]
+    },
+    {
+      "id": "biokampus-ufa",
+      "name": "БиоКампус — биотехнологии для школьников",
+      "officialUrl": "https://biokampus.ru/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "950 ₽ за занятие; абонемент 4 занятия — 2990 ₽, 10 занятий — 6990 ₽; лекторий для родителей бесплатный",
+      "ageRange": "8–17 лет (группы 8–11, 12–14, 15–17)",
+      "minAgeNote": "Группы по возрастным категориям 8–11, 12–14 и 15–17 лет",
+      "summary": "Уфимский центр практических занятий по биотехнологиям для школьников, где под руководством молодых учёных дети самостоятельно делают биотехнологический продукт.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Уфа",
+          "name": "БиоКампус",
+          "address": "г. Уфа, ул. Заки Валиди, д. 32/2",
+          "url": "https://biokampus.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://biokampus.ru/"
+      ]
+    },
+    {
+      "id": "bionic-rosbiotech",
+      "name": "Детский технопарк «Бионик» (РОСБИОТЕХ)",
+      "officialUrl": "https://technopark.rosbiotech.ru/about",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Стоимость на сайте не указана — уточняется у организатора",
+      "ageRange": "школьники",
+      "minAgeNote": "Программы для школьников; конкретные возрастные границы уточняются у организатора",
+      "summary": "Детский технопарк в центре Москвы при университете РОСБИОТЕХ с направлением «Биотехнологии» (основы генетики, анализ биологических данных, проекты в области медицины) и другими практико-ориентированными курсами.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Детский технопарк «Бионик» РОСБИОТЕХ",
+          "url": "https://technopark.rosbiotech.ru/about",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://technopark.rosbiotech.ru/about"
+      ]
+    },
+    {
+      "id": "deti-i-nauka-labs",
+      "name": "«Дети и наука. Лаборатории» — Биолаборатория",
+      "officialUrl": "https://labs.childrenscience.ru/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Биолаборатория — 1200 ₽/час (9600–12000 ₽/месяц); есть образовательная лицензия, налоговый вычет и оплата материнским капиталом",
+      "ageRange": "5–10 классы",
+      "minAgeNote": "Проектные лаборатории для 5–7 классов; лаборатории выбора профессии для 8–10 классов",
+      "summary": "Московский проект дополнительного образования с биолабораторией и лабораторией биохимии, где школьники изучают биологию через эксперименты с микроскопами и биосистемами.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Дети и наука. Классы/Лаборатории",
+          "address": "Земляной вал, д. 7, Москва",
+          "url": "https://labs.childrenscience.ru/biolab56",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://labs.childrenscience.ru/",
+        "https://labs.childrenscience.ru/biolab56"
+      ]
+    },
+    {
+      "id": "kapitsa-center",
+      "name": "Технопарк Физтех-лицея им. П. Л. Капицы — Школа юного биотехнолога",
+      "officialUrl": "https://kapitsa.center/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Интенсив «Школа юного биотехнолога» — 10900 ₽",
+      "ageRange": "5–8 классы (11–14 лет)",
+      "minAgeNote": "Программы «Школа юного биотехнолога» рассчитаны на 11–14 лет",
+      "summary": "Технопарк при Физтех-лицее им. П. Л. Капицы (Долгопрудный) проводит интенсивы «Школа юного биотехнолога» с реальной лабораторной работой (микробиология, культура тканей растений, выделение ДНК).",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Долгопрудный (Московская область)",
+          "name": "Технопарк Физтех-лицея им. П. Л. Капицы",
+          "url": "https://kapitsa.center/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://kapitsa.center/events/shkola-yunogo-biotehnologa-tsarstvo-bakteriy/",
+        "https://kapitsa.center/events/shkola-yunogo-biotehnologa-tsarstvo-rasteniy/"
+      ]
+    },
+    {
+      "id": "inginirium-bauman",
+      "name": "Инжинириум МГТУ им. Н. Э. Баумана — курс «Биотехнологии»",
+      "officialUrl": "https://inginirium-perm.ru/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Пермь: 1750 ₽/занятие; Москва: от 2470 ₽/занятие (скидки до 20%)",
+      "ageRange": "1–8 классы (по площадкам)",
+      "minAgeNote": "Курс «Биотехнологии» для 1–4 и 5–8 классов",
+      "summary": "Сеть детских инженерных центров под брендом МГТУ им. Баумана с курсом «Биотехнологии» (микробиология, молекулярная кухня, ДНК, экология) для школьников в Перми и Москве.",
+      "directions": [
+        "bioengineering"
+      ],
+      "branches": [
+        {
+          "city": "Пермь",
+          "name": "Инжинириум МГТУ им. Баумана (Пермь)",
+          "address": "Пермь, ул. Уинская, д. 9 (также ул. Сапфирная, 13; ул. Льва Шатрова, 5)",
+          "url": "https://inginirium-perm.ru/kursy/biotekhnologii-1-4-klassy/",
+          "verified": true
+        },
+        {
+          "city": "Москва",
+          "name": "Инжинириум МГТУ им. Баумана (Тропарёво-Никулино)",
+          "url": "https://inginirium-troparyovo-nikulino.ru/biotechnology-5-8",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://inginirium-perm.ru/kursy/biotekhnologii-1-4-klassy/",
+        "https://inginirium-troparyovo-nikulino.ru/biotechnology-5-8"
+      ]
+    },
+    {
+      "id": "akademiya-dronov",
+      "name": "Академия Дронов (ЦПО БПЛА)",
+      "officialUrl": "https://dronschool.ru/teenager",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "От 1500 ₽ за занятие; от 5900 ₽/месяц (4 занятия); полный курс от 23600 ₽ (до 4 месяцев)",
+      "ageRange": "14–17 лет",
+      "minAgeNote": "Программа для подростков 14–17 лет; по итогам экзамена выдаётся свидетельство о присвоении профессии «Оператор БПЛА»",
+      "summary": "Коммерческая академия, обучающая подростков сборке, настройке и пилотированию FPV-дронов в мини-группах с получением свидетельства «Оператор БПЛА».",
+      "directions": [
+        "drone-piloting"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "Академия Дронов (Москва)",
+          "url": "https://dronschool.ru/teenager",
+          "verified": true
+        },
+        {
+          "city": "Нижний Новгород",
+          "name": "Академия Дронов (Нижний Новгород)",
+          "url": "https://dronschool.ru/teenager",
+          "verified": true
+        },
+        {
+          "city": "Воронеж",
+          "name": "Академия Дронов (Воронеж)",
+          "url": "https://dronschool.ru/teenager",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [
+        "Тверь",
+        "Ижевск",
+        "Ульяновск"
+      ],
+      "sources": [
+        "https://dronschool.ru/teenager"
+      ]
+    },
+    {
+      "id": "dronmir",
+      "name": "Клуб пилотирования дронов «ДронМир»",
+      "officialUrl": "https://dronmir.ru/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Стоимость зависит от программы/этапа (мини-группы или индивидуально) — уточняется по заявке",
+      "ageRange": "с 8 лет",
+      "minAgeNote": "Занятия для детей от 8 лет и взрослых",
+      "summary": "Московский клуб спортивного пилотирования, обучающий детей от 8 лет сборке, пайке, прошивке, 3D-моделированию и FPV-пилотированию на симуляторах и площадках.",
+      "directions": [
+        "drone-piloting"
+      ],
+      "branches": [
+        {
+          "city": "Москва",
+          "name": "ДронМир",
+          "url": "https://dronmir.ru/",
+          "verified": true
+        }
+      ],
+      "citiesUnverified": [],
+      "sources": [
+        "https://dronmir.ru/"
+      ]
+    }
+  ],
+  "nationwideProgrammes": [
+    {
+      "id": "nto",
+      "name": "Национальная технологическая олимпиада (НТО)",
+      "url": "https://ntcontest.ru/",
+      "directions": [
+        "drone-piloting",
+        "robotics",
+        "ai-data",
+        "bioengineering",
+        "programming-web",
+        "cybersecurity"
+      ],
+      "summary": "Всероссийские командные инженерные соревнования для школьников (треки Junior 5–7 классы, для школьников 8–11 классы) и студентов с профилями от «Летающей робототехники» до геномного редактирования; преемник Олимпиады Кружкового движения НТИ.",
+      "note": "Отборочные этапы проходят дистанционно — участие возможно из любого города; победители получают льготы при поступлении (до 100 баллов ЕГЭ / БВИ)",
+      "verified": true
+    },
+    {
+      "id": "nto-junior-flying-robotics",
+      "name": "НТО. Профиль «Летающая робототехника»",
+      "url": "https://ntcontest.ru/tracks/nto-school/",
+      "directions": [
+        "drone-piloting",
+        "robotics"
+      ],
+      "summary": "Профиль Национальной технологической олимпиады по разработке и программированию беспилотных летательных аппаратов для школьников.",
+      "note": "Профильный трек НТО по дронам; отборочные этапы дистанционные, участие из любого города. URL профиля следует подтвердить в текущем сезоне на ntcontest.ru Профиль «Летающая робототехника» ищите в списке треков школьного уровня.",
+      "verified": true
+    },
+    {
+      "id": "kruzhkovoe-dvizhenie-nti",
+      "name": "Кружковое движение НТИ",
+      "url": "https://kruzhok.org/",
+      "directions": [
+        "drone-piloting",
+        "robotics",
+        "ai-data",
+        "bioengineering"
+      ],
+      "summary": "Всероссийское сообщество технологических энтузиастов и один из учредителей НТО, развивающее инженерные кружки и олимпиадные треки, в том числе по беспилотным системам.",
+      "note": "Онлайн-сообщество и организатор мероприятий — доступно из любого города",
+      "verified": true
+    },
+    {
+      "id": "shkolnaya-kiberliga",
+      "name": "Всероссийская интеллектуально-киберспортивная школьная лига (Школьная лига)",
+      "url": "https://xn--80aacijqclbifsl9a7hzctc.xn--p1ai/",
+      "directions": [
+        "esports"
+      ],
+      "summary": "Всероссийская школьная киберспортивная лига под эгидой ФКС России для обучающихся общеобразовательных организаций.",
+      "note": "Участие с 14 лет; для участников младше 18 лет по запросу требуется письменное согласие родителя/законного представителя. Онлайн-этапы доступны из любого города. Домен: школьнаякиберлига.рф",
+      "verified": true
+    },
+    {
+      "id": "natsproekt-bas",
+      "name": "Национальный проект «Беспилотные авиационные системы» / «Кадры для БАС»",
+      "url": "https://firpo.ru/bas",
+      "directions": [
+        "drone-piloting"
+      ],
+      "summary": "Государственный национальный проект по развитию отрасли БАС и подготовке кадров; в рамках проекта в школах создаются специализированные классы БАС (в 2024 г. — более чем в 30 регионах, включая Воронежскую, Нижегородскую, Самарскую, Свердловскую, Челябинскую области, Республику Башкортостан и Татарстан).",
+      "note": "Государственная программа: специализированные школьные классы БАС создаются по регионам. Официальный портал нацпроектов — национальныепроекты.рф (пуникод xn--80aapampemcchfmo7a3c9ehj.xn--p1ai); образовательный контент — на портале ФИРПО (firpo.ru/bas)",
+      "verified": true
+    },
+    {
+      "id": "vsosh-biology",
+      "name": "Всероссийская олимпиада школьников (ВсОШ) — биология",
+      "url": "https://vos.olimpiada.ru/",
+      "directions": [
+        "bioengineering"
+      ],
+      "summary": "Крупнейшая государственная олимпиада школьников с предметом «биология»; проводится в школьном, муниципальном, региональном и заключительном этапах по всей стране.",
+      "note": "Школьный этап доступен во всех регионах — участие из любого города. Московский портал — vos.olimpiada.ru; общероссийский — olimpiada.ru",
+      "verified": true
+    },
+    {
+      "id": "fgdr-championship-kids",
+      "name": "Всероссийский чемпионат пилотирования дронов для детей и подростков (ФГДР)",
+      "url": "https://fgdr.ru/",
+      "directions": [
+        "drone-piloting"
+      ],
+      "summary": "Всероссийские детско-юношеские соревнования по пилотированию дронов, проводимые Федерацией гонок дронов России, с региональными этапами и Студенческой лигой.",
+      "note": "Соревнования проходят в субъектах РФ через региональные отделения ФГДР; онлайн-дисциплина (технический симулятор) позволяет участвовать удалённо",
+      "verified": true
+    }
+  ]
+}

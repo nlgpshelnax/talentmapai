@@ -42,6 +42,7 @@ const {
   publicStar,
   publicResource,
   publicStoreItem,
+  publicVenue,
 } = require('../src/utils/serialize');
 
 // ─────────────────────────────────────────────────── CJS → ESM transpilation
@@ -87,13 +88,14 @@ async function main() {
   await createSchema();
   await seedAll();
 
-  const [constellations, stars, edges, resources, storeItems, cities] = await Promise.all([
+  const [constellations, stars, edges, resources, storeItems, cities, venues] = await Promise.all([
     dbAll('SELECT * FROM constellations ORDER BY sort_order, id'),
     dbAll('SELECT * FROM stars ORDER BY constellation_id, order_index, id'),
     dbAll('SELECT * FROM star_edges'),
     dbAll('SELECT * FROM resources ORDER BY star_id, type'),
     dbAll('SELECT * FROM store_items ORDER BY sort_order, id'),
     dbAll('SELECT name FROM cities ORDER BY sort_order, name'),
+    dbAll('SELECT * FROM venues ORDER BY sort_order, id'),
   ]);
 
   // The demo scores answers in the browser, so the weights ship with it.
@@ -115,6 +117,7 @@ async function main() {
     edges: edges.map((e) => ({ parent: e.parent_star_id, child: e.child_star_id })),
     resources: resources.map(publicResource),
     storeItems: storeItems.map(publicStoreItem),
+    venues: venues.map(publicVenue),
     cities: cities.map((c) => c.name),
     questions: publicQuestions(),
     answerWeights,
@@ -134,6 +137,7 @@ async function main() {
   console.log(
     `[demo] снимок: ${snapshot.constellations.length} созвездий, ${snapshot.stars.length} звёзд, ` +
       `${snapshot.resources.length} ресурсов, ${snapshot.storeItems.length} товаров, ` +
+      `${snapshot.venues.length} площадок, ` +
       `${snapshot.cities.length} городов, ${snapshot.questions.length} вопросов`
   );
   console.log('[demo] сгенерированы ESM-модули: questions.js, recommend.js');

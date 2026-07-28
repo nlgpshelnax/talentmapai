@@ -210,6 +210,7 @@ export default function AdminDashboard() {
             <Stat icon={Star} label="Навыки" value={stats?.stars} />
             <Stat icon={BookOpen} label="Ресурсы" value={stats?.resources} />
             <Stat icon={FolderKanban} label="Работы" value={stats?.works} />
+            <Stat icon={MapPin} label="Площадки" value={stats?.venues} />
           </div>
         </div>
       </header>

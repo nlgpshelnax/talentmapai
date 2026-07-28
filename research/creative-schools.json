@@ -1,0 +1,252 @@
+{
+  "researchedAt": "2026-07-29",
+  "_notes": "All organisation names, URLs, addresses and prices in this file were taken from pages actually fetched during research (organisation's own domains, or — for the state 'Навигатор' portals — official regional government / school / municipal pages that quote the portal URL). No address, phone, price or URL has been invented. Where a branch address could not be confirmed from a primary source, the address field is omitted and only city + official URL are kept. Fields marked verified:false could not be confirmed from a primary/organisation source. Разработчик большинства региональных 'Навигаторов' — ООО «Государство детей» (dopportal.ru); каждый регион имеет свой поддомен рNN.навигатор.дети или собственный домен.",
+  "schools": [
+    {
+      "id": "mshp-videoforme",
+      "name": "Международная школа профессий (бывш. Санкт-Петербургская школа телевидения)",
+      "officialUrl": "https://videoforme.ru/",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте (действуют рассрочка и скидки)",
+      "ageRange": "взрослые и подростки; ряд курсов для подростков, уточняйте возраст у центра",
+      "summary": "Всероссийская сеть учебных центров (бывш. СПбШТ), работающая более чем в 40 городах России и странах СНГ; факультеты дизайна, медиа, фото и видео, музыки и звука.",
+      "directions": ["media-content", "design-project", "computer-graphics", "sound-design"],
+      "branches": [
+        { "city": "Москва", "name": "МШП Москва", "address": "ул. Новая Басманная, д. 23А, строение 3", "url": "https://moscow.videoforme.ru/", "verified": true },
+        { "city": "Санкт-Петербург", "name": "МШП Санкт-Петербург", "address": "Большой пр-т П.С., д. 43", "url": "https://videoforme.ru/", "verified": true },
+        { "city": "Новосибирск", "name": "МШП Новосибирск", "address": "ул. Дуси Ковальчук, д. 252", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Екатеринбург", "name": "МШП Екатеринбург", "address": "ул. Шейнкмана, 9, офис 69, БЦ \"Маршал\"", "url": "https://ekb.videoforme.ru/", "verified": true },
+        { "city": "Казань", "name": "МШП Казань", "address": "ул. Мусы Джалиля, д. 7, \"Грачи\"", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Нижний Новгород", "name": "МШП Нижний Новгород", "address": "ул. Новая, д. 28, 1 подъезд, 2 этаж", "url": "https://nizniy-novgorod.videoforme.ru/", "verified": true },
+        { "city": "Челябинск", "name": "МШП Челябинск", "address": "пр. Ленина 21В, БЦ Спиридонов, 1 этаж", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Самара", "name": "МШП Самара", "address": "пр. Карла Маркса, 59А", "url": "https://samara.videoforme.ru/", "verified": true },
+        { "city": "Омск", "name": "МШП Омск", "address": "Больничный переулок, д. 6", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Ростов-на-Дону", "name": "МШП Ростов-на-Дону", "address": "пер. Семашко 117А, 3 этаж", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Уфа", "name": "МШП Уфа", "address": "ул. Чернышевского, 104", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Красноярск", "name": "МШП Красноярск", "address": "ул. Батурина 38а", "url": "https://krasnoyarsk.videoforme.ru/", "verified": true },
+        { "city": "Пермь", "name": "МШП Пермь", "address": "ул. 25 Октября 17, 4 этаж", "url": "https://videoforme.ru/education_centers", "verified": true },
+        { "city": "Воронеж", "name": "МШП Воронеж", "address": "ул. Кольцовская 23 А, 4 этаж", "url": "https://videoforme.ru/education_centers", "verified": true }
+      ],
+      "citiesUnverified": ["Архангельск", "Барнаул", "Белгород", "Брянск", "Волгоград", "Иркутск", "Иваново", "Кемерово", "Калининград", "Краснодар", "Липецк", "Оренбург", "Пенза", "Рязань", "Смоленск", "Сургут", "Саратов", "Томск", "Тула", "Тольятти", "Тюмень", "Ульяновск", "Чебоксары", "Ижевск", "Ярославль", "Новокузнецк"],
+      "sources": ["https://videoforme.ru/education_centers", "https://videoforme.ru/about", "https://samara.videoforme.ru/about"]
+    },
+    {
+      "id": "hse-design-kids",
+      "name": "Детская школа дизайна НИУ ВШЭ",
+      "officialUrl": "https://design.hse.ru/kids",
+      "kind": "university",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте",
+      "ageRange": "7–15 лет",
+      "summary": "Детское подразделение Школы дизайна НИУ ВШЭ: 30+ очных и онлайн-курсов по графическому и цифровому дизайну, анимации, гейм-дизайну, комиксам, современной музыке и саунд-арту для детей 7–15 лет.",
+      "directions": ["computer-graphics", "design-project", "media-content", "gamedev", "sound-design"],
+      "branches": [
+        { "city": "Москва", "name": "Кампус в Москве", "address": "Малая Пионерская ул., 12 (м. Павелецкая/Серпуховская); Измайловское шоссе, 44с2 / Кирпичная ул., 33с2 (м. Семёновская)", "url": "https://design.hse.ru/info/campuses", "verified": true },
+        { "city": "Санкт-Петербург", "name": "Кампус в Санкт-Петербурге", "address": "25-я линия Васильевского острова, 6к1", "url": "https://design.hse.ru/info/campuses", "verified": true },
+        { "city": "Нижний Новгород", "name": "Кампус в Нижнем Новгороде", "url": "https://design.hse.ru/info/campuses", "verified": true },
+        { "city": "Пермь", "name": "Пермь (онлайн-формат)", "url": "https://design.hse.ru/kids", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://design.hse.ru/kids", "https://design.hse.ru/info/campuses", "https://design.hse.ru/kids/programming"]
+    },
+    {
+      "id": "britanka-uteens",
+      "name": "Британская высшая школа дизайна — программы для школьников (Uteens / БВШД Юниор)",
+      "officialUrl": "https://britishdesign.ru/courses/d/schoolkid/",
+      "kind": "nonprofit",
+      "format": "offline",
+      "priceNote": "Платно; например годовые программы ~345 000 ₽/год, короткие курсы от ~100 000 ₽ (уточняйте на сайте)",
+      "ageRange": "10–16 лет",
+      "summary": "Подростковые программы Британской высшей школы дизайна (Uteens): изобразительное искусство, графический и цифровой дизайн, иллюстрация, комикс/манга, мода, фотография и анимация в кампусе ARTPLAY.",
+      "directions": ["computer-graphics", "design-project", "media-content"],
+      "branches": [
+        { "city": "Москва", "name": "Британская высшая школа дизайна (кампус Universal University)", "address": "Центр дизайна ARTPLAY, ул. Нижняя Сыромятническая, 10 (корпуса БВШД)", "url": "https://britishdesign.ru/courses/d/schoolkid/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://britishdesign.ru/courses/d/schoolkid/", "https://britishdesign.ru/courses/artscool-art-design/", "https://britishdesign.ru/courses/artscool-creative-start/"]
+    },
+    {
+      "id": "scream-school",
+      "name": "Scream School (школа компьютерной графики и разработки игр)",
+      "officialUrl": "https://scream.school/",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте",
+      "ageRange": "подростковые курсы 14–16 лет",
+      "summary": "Первая в России школа компьютерной графики и разработки игр (часть Universal University); есть подростковые курсы по гейм-дизайну и 3D-моделированию (Blender, Unity) в кампусе ARTPLAY.",
+      "directions": ["computer-graphics", "gamedev", "3d-printing"],
+      "branches": [
+        { "city": "Москва", "name": "Scream School (кампус Universal University)", "address": "Центр дизайна ARTPLAY, Нижняя Сыромятническая ул., д. 10, корпус 4", "url": "https://scream.school/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://scream.school/", "https://scream.school/gamedesignteens", "https://screamschool.ru/courses/kurs-3d-dlya-shkolnikov/"]
+    },
+    {
+      "id": "moscow-film-school",
+      "name": "Московская школа кино — программы для школьников (Uteens)",
+      "officialUrl": "https://moscowfilmschool.ru/courses/filter/type-is-programmy-dlya-shkolnikov/",
+      "kind": "commercial",
+      "format": "offline",
+      "priceNote": "Платно, уточняйте на сайте (возможна оплата материнским капиталом, налоговый вычет)",
+      "ageRange": "13–16 лет",
+      "summary": "Киношкола (часть Universal University) с очными программами для подростков по кинопроизводству, анимации и актёрскому мастерству; итог — собственный короткометражный фильм и портфолио.",
+      "directions": ["media-content"],
+      "branches": [
+        { "city": "Москва", "name": "Московская школа кино (кампус Universal University)", "address": "Центр дизайна ARTPLAY, ул. Нижняя Сыромятническая, 10, строение 2", "url": "https://moscowfilmschool.ru/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://moscowfilmschool.ru/courses/filter/type-is-programmy-dlya-shkolnikov/", "https://moscowfilmschool.ru/courses/filmmaking-teens/", "https://moscowfilmschool.ru/courses/filmmaking-teens-1/"]
+    },
+    {
+      "id": "moscow-music-school",
+      "name": "Moscow Music School (Московская школа музыки)",
+      "officialUrl": "https://moscowmusicschool.ru/",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте",
+      "ageRange": "взрослые; подростковый интенсив «Как устроена музыка?» 12–16 лет",
+      "summary": "Частная школа современной музыки (часть Universal University): музыкальное продюсирование, саунд-дизайн, звукорежиссура, Ableton Live; есть профориентационный интенсив для подростков 12–16 лет.",
+      "directions": ["sound-design"],
+      "branches": [
+        { "city": "Москва", "name": "Moscow Music School", "url": "https://moscowmusicschool.ru/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://moscowmusicschool.ru/", "https://moscowmusicschool.ru/intensives/sound-design_mms/", "https://moscowmusicschool.ru/intensives/mms-intro/"]
+    },
+    {
+      "id": "rodchenko-school",
+      "name": "Московская школа фотографии и мультимедиа им. А. Родченко",
+      "officialUrl": "https://mdfschool.ru/",
+      "kind": "state",
+      "format": "offline",
+      "priceNote": "Есть бюджетные места; дневная программа бесплатная, вечерние курсы платные — уточняйте на сайте",
+      "ageRange": "преимущественно совершеннолетние студенты (проверяйте условия приёма)",
+      "summary": "Государственная школа современного художественного образования (подразделение Мультимедиа Арт Музея): фотография, видеоарт, новые медиа, экспериментальный звук; трёхлетняя дневная программа.",
+      "directions": ["media-content", "computer-graphics", "sound-design"],
+      "branches": [
+        { "city": "Москва", "name": "Школа Родченко", "address": "2-й Красносельский пер., дом 2", "url": "https://mdfschool.ru/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://mdfschool.ru/main", "https://mdfschool.ru/about/", "https://mdfschool.ru/en/"]
+    },
+    {
+      "id": "photoacademy",
+      "name": "Академия Фотографии (фотошкола)",
+      "officialUrl": "https://www.photoacademy.ru/",
+      "kind": "commercial",
+      "format": "hybrid",
+      "priceNote": "Платно, уточняйте на сайте",
+      "ageRange": "взрослые; отдельные «курсы для подростков 1 и 2 ступень»",
+      "summary": "Московская фотошкола с более чем 20-летней историей; помимо взрослых программ есть двухступенчатый курс фотографии для подростков.",
+      "directions": ["media-content"],
+      "branches": [
+        { "city": "Москва", "name": "Академия Фотографии", "url": "https://www.photoacademy.ru/", "verified": true }
+      ],
+      "citiesUnverified": [],
+      "sources": ["https://www.photoacademy.ru/"]
+    }
+  ],
+  "regionalPortals": [
+    {
+      "city": "Москва",
+      "region": "Москва",
+      "name": "Запись в кружки, спортивные секции, дома творчества (Госуслуги Москвы, mos.ru)",
+      "url": "https://www.mos.ru/pgu2/landing/activity_obr/",
+      "verified": true,
+      "note": "В Москве запись на дополнительное образование ведётся через портал mos.ru (Госуслуги Москвы), а не через рNN.навигатор.дети."
+    },
+    {
+      "city": "Санкт-Петербург",
+      "region": "Санкт-Петербург",
+      "name": "Навигатор дополнительного образования детей Санкт-Петербурга",
+      "url": "https://dopobr.petersburgedu.ru/",
+      "verified": true,
+      "note": "Альтернативный адрес сервиса записи: https://navigator.gov.spb.ru"
+    },
+    {
+      "city": "Новосибирск",
+      "region": "Новосибирская область",
+      "name": "Навигатор дополнительного образования детей Новосибирской области",
+      "url": "https://navigator.edu54.ru/",
+      "verified": true
+    },
+    {
+      "city": "Екатеринбург",
+      "region": "Свердловская область",
+      "name": "Навигатор дополнительного образования детей Свердловской области",
+      "url": "https://р66.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Казань",
+      "region": "Республика Татарстан",
+      "name": "Навигатор дополнительного образования Республики Татарстан",
+      "url": "https://р16.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Нижний Новгород",
+      "region": "Нижегородская область",
+      "name": "Навигатор дополнительного образования детей Нижегородской области",
+      "url": "https://р52.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Челябинск",
+      "region": "Челябинская область",
+      "name": "Навигатор дополнительного образования детей Челябинской области",
+      "url": "https://ndo.edu-74.ru/",
+      "verified": true
+    },
+    {
+      "city": "Самара",
+      "region": "Самарская область",
+      "name": "Навигатор дополнительного образования детей Самарской области",
+      "url": "https://navigator.asurso.ru/",
+      "verified": true
+    },
+    {
+      "city": "Омск",
+      "region": "Омская область",
+      "name": "Навигатор дополнительного образования Омской области",
+      "url": "https://р55.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Ростов-на-Дону",
+      "region": "Ростовская область",
+      "name": "Навигатор дополнительного образования детей Ростовской области",
+      "url": "https://р61.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Уфа",
+      "region": "Республика Башкортостан",
+      "name": "Навигатор дополнительного образования детей Республики Башкортостан",
+      "url": "https://р02.навигатор.дети/",
+      "verified": true
+    },
+    {
+      "city": "Красноярск",
+      "region": "Красноярский край",
+      "name": "Навигатор дополнительного образования детей Красноярского края",
+      "url": "https://navigator.dvpion.ru/",
+      "verified": true
+    },
+    {
+      "city": "Пермь",
+      "region": "Пермский край",
+      "name": "Навигатор дополнительного образования Пермского края",
+      "url": "http://navigatordo.ru/",
+      "verified": true
+    },
+    {
+      "city": "Воронеж",
+      "region": "Воронежская область",
+      "name": "Навигатор дополнительного образования Воронежской области",
+      "url": "https://navigatordo.govvrn.ru/",
+      "verified": true
+    }
+  ]
+}

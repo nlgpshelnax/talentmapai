@@ -21,13 +21,17 @@ export const STAR_LEVELS = [
   'Экспертный (Профи)',
 ];
 
+/**
+ * Очных занятий среди ресурсов навыка больше нет: они переехали в каталог
+ * площадок, который привязан к направлению и городу. Ресурс навыка — это
+ * онлайн-курс или инструмент, то есть то, что одинаково для всех городов.
+ */
 const RESOURCE_TYPES = [
-  { value: 'offline', label: 'Офлайн', icon: MapPin },
   { value: 'online', label: 'Онлайн', icon: Link2 },
   { value: 'tool', label: 'Инструмент', icon: Wrench },
 ];
 
-const EMPTY_RESOURCE = { type: 'offline', title: '', detail1: '', detail2: '', link: '', city: 'Все города' };
+const EMPTY_RESOURCE = { type: 'online', title: '', detail1: '', detail2: '', link: '', city: 'Все города' };
 
 function formFromStar(star) {
   return {
@@ -348,7 +352,7 @@ export default function StarPanel({ star, resources, onChanged, onDeleted }) {
 
 function ResourceModal({ starId, mode, initial, onClose, onSaved }) {
   const [form, setForm] = useState({
-    type: RESOURCE_TYPES.some((t) => t.value === initial.type) ? initial.type : 'offline',
+    type: RESOURCE_TYPES.some((t) => t.value === initial.type) ? initial.type : 'online',
     title: initial.title || '',
     detail1: initial.detail1 || '',
     detail2: initial.detail2 || '',

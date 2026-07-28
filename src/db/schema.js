@@ -145,6 +145,34 @@ const TABLES = [
      sort_order INTEGER NOT NULL DEFAULT 0
    )`,
 
+  /**
+   * Реальные площадки: кружки, центры и школы, где направление можно осваивать
+   * очно. Прежде «офлайн-ресурс» был один на навык и с выдуманным адресом —
+   * ребёнок из Омска видел мастер-класс в Казани и больше ничего. Площадка
+   * привязана к направлению и городу, а не к отдельному навыку: в студию ходят
+   * учиться графике, а не «работе со слоями».
+   */
+  `CREATE TABLE IF NOT EXISTS venues (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     code        TEXT    NOT NULL UNIQUE,
+     network     TEXT    NOT NULL DEFAULT '',
+     name        TEXT    NOT NULL,
+     org         TEXT,
+     city        TEXT    NOT NULL,
+     address     TEXT,
+     url         TEXT,
+     kind        TEXT    NOT NULL DEFAULT 'commercial',
+     format      TEXT    NOT NULL DEFAULT 'offline',
+     price_note  TEXT,
+     age_range   TEXT,
+     summary     TEXT,
+     directions  TEXT    NOT NULL DEFAULT '[]',
+     verified    INTEGER NOT NULL DEFAULT 0,
+     sort_order  INTEGER NOT NULL DEFAULT 0
+   )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_venues_city ON venues(city)`,
+
   `CREATE TABLE IF NOT EXISTS diagnostics_results (
      id         INTEGER PRIMARY KEY AUTOINCREMENT,
      user_id    INTEGER NOT NULL,

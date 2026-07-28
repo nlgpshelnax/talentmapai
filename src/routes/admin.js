@@ -420,7 +420,9 @@ router.get(
              (SELECT COUNT(*) FROM resources)                          AS resources,
              (SELECT COUNT(*) FROM portfolio)                          AS works,
              (SELECT COUNT(*) FROM user_progress)                      AS completions,
-             (SELECT COUNT(*) FROM cities)                             AS cities
+             (SELECT COUNT(*) FROM cities)                             AS cities,
+             (SELECT COUNT(*) FROM venues)                             AS venues,
+             (SELECT COUNT(DISTINCT city) FROM venues)                 AS venueCities
     `);
 
     const orphans = await dbGet(
