@@ -532,11 +532,11 @@ export default function MapPage() {
             const r = style.r * unit;
             // Названия видны сразу у пройденных и текущей звезды, у остальных —
             // при наведении: так карта читается с первого взгляда, но не пестрит.
-            // На узком экране подписываем только текущий шаг: две соседние
-            // подписи там налезают друг на друга и на саму звезду.
-            const showLabel = isNarrow
-              ? isCurrent
-              : (isCurrent || st === STAR_STATE.COMPLETED) && laidConstellations.length <= 3;
+            // На узком экране постоянных подписей нет: кластеры там плотные,
+            // и название неизбежно налезает на соседнюю звезду. Текущий шаг
+            // назван в полосе под картой, остальные открываются по касанию.
+            const showLabel =
+              !isNarrow && (isCurrent || st === STAR_STATE.COMPLETED) && laidConstellations.length <= 3;
             const maxLabel = isNarrow ? 17 : 26;
             const shortName =
               star.name.length > maxLabel ? `${star.name.slice(0, maxLabel - 1)}…` : star.name;

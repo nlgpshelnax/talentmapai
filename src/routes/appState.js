@@ -103,8 +103,10 @@ router.get(
          FROM history_logs WHERE user_id = ? AND log_text LIKE '%шаг%'`,
         [req.user.id]
       ),
+      // Разница в календарных днях, а не в сутках по 24 часа: занятие
+      // шестнадцать часов назад — это «вчера», а не «сегодня».
       dbGet(
-        `SELECT CAST(julianday('now') - julianday(MAX(created_at)) AS INTEGER) AS days
+        `SELECT CAST(julianday(date('now')) - julianday(date(MAX(created_at))) AS INTEGER) AS days
            FROM history_logs WHERE user_id = ?`,
         [req.user.id]
       ),

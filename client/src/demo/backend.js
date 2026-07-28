@@ -110,6 +110,13 @@ function progressOf(userId) {
   return getState().progress.filter((p) => p.userId === userId).map((p) => p.starId);
 }
 
+const startOfDay = (ms) => {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+const calendarDaysBetween = (from, to) => Math.max(0, Math.round((startOfDay(to) - startOfDay(from)) / 86400000));
+
 /** Темп занятий: сколько шагов закрыто за неделю/месяц и когда была активность. */
 function pace(userId) {
   const logs = getState().logs.filter((l) => l.userId === userId);
@@ -120,7 +127,9 @@ function pace(userId) {
   const within = (days) => steps.filter((t) => t >= now - days * 86400000).length;
   return {
     pace: { month: within(30), week: within(7) },
-    daysSinceActivity: times.length ? Math.max(0, Math.floor((now - Math.max(...times)) / 86400000)) : null,
+    // Календарные дни, а не сутки по 24 часа: вечернее занятие вчера должно
+    // читаться как «вчера», а не «сегодня».
+    daysSinceActivity: times.length ? calendarDaysBetween(Math.max(...times), now) : null,
   };
 }
 

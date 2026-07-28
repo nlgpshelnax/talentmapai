@@ -214,11 +214,16 @@ function DashboardContent({ hasPin }) {
     const constellation = (state?.constellations || []).find((c) => c.id === star.constellationId);
     const city = user.city;
     const forStar = (state?.resources || []).filter((r) => r.starId === star.id);
-    const offline = forStar.filter(
-      (r) => r.type === 'offline' && (!city || !r.city || r.city === 'Все города' || r.city === city)
-    );
+    const allOffline = forStar.filter((r) => r.type === 'offline');
+    const here = (r) => !city || !r.city || r.city === 'Все города' || r.city === city;
+
+    // Очное занятие в другом городе всё равно показываем — просто честно
+    // подписываем город. Прятать его совсем значило скрывать от родителя
+    // единственную офлайн-возможность по текущему шагу.
+    const offline = allOffline.filter(here);
+    const elsewhere = allOffline.filter((r) => !here(r));
     const online = forStar.filter((r) => r.type !== 'offline');
-    return { star, constellation, offline, online };
+    return { star, constellation, offline, elsewhere, online };
   }, [state?.stars, state?.currentStarId, state?.constellations, state?.resources, user.city]);
 
   async function handleUpgrade() {
@@ -395,32 +400,29 @@ function DashboardContent({ hasPin }) {
                   </p>
                   <ul className="space-y-2.5">
                     {nowLearning.offline.map((r) => (
-                      <li key={r.id} className="rounded-2xl border border-white/10 p-3.5">
-                        <p className="text-sm font-medium text-slate-100">{r.title}</p>
-                        {(r.detail1 || r.detail2) && (
-                          <p className="mt-0.5 text-xs text-slate-400">{[r.detail1, r.detail2].filter(Boolean).join(' · ')}</p>
-                        )}
-                        {r.link && (
-                          <a
-                            href={r.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-gold-300 hover:text-gold-200"
-                          >
-                            Подробнее
-                            <ExternalLink size={12} aria-hidden="true" />
-                          </a>
-                        )}
-                      </li>
+                      <ResourceRow key={r.id} r={r} />
                     ))}
                   </ul>
                 </div>
               )}
 
-              {nowLearning.offline.length === 0 && nowLearning.online.length > 0 && (
+              {nowLearning.offline.length === 0 && nowLearning.elsewhere.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2.5 text-sm font-medium text-slate-300">
+                    Очных занятий{user.city ? ` в городе ${user.city}` : ''} по этому шагу нет. Ближайшее — в другом
+                    городе:
+                  </p>
+                  <ul className="space-y-2.5">
+                    {nowLearning.elsewhere.map((r) => (
+                      <ResourceRow key={r.id} r={r} city={r.city} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {nowLearning.offline.length === 0 && nowLearning.elsewhere.length === 0 && nowLearning.online.length > 0 && (
                 <p className="mt-4 text-sm text-slate-400">
-                  Очных занятий по этому шагу{user.city ? ` в городе ${user.city}` : ''} пока нет — ребёнок проходит его
-                  онлайн, материалы открыты на карте.
+                  Очных занятий по этому шагу пока нет — ребёнок проходит его онлайн, материалы открыты на карте.
                 </p>
               )}
             </div>
@@ -491,6 +493,38 @@ function DashboardContent({ hasPin }) {
 }
 
 /* ----------------------------------------------------------------- StatTile */
+
+/* --------------------------------------------------------------- Resource */
+
+function ResourceRow({ r, city }) {
+  return (
+    <li className="rounded-2xl border border-white/10 p-3.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-medium text-slate-100">{r.title}</p>
+        {city && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/8 px-2 py-0.5 text-xs text-slate-300">
+            <MapPin size={11} aria-hidden="true" />
+            {city}
+          </span>
+        )}
+      </div>
+      {(r.detail1 || r.detail2) && (
+        <p className="mt-0.5 text-xs text-slate-400">{[r.detail1, r.detail2].filter(Boolean).join(' · ')}</p>
+      )}
+      {r.link && (
+        <a
+          href={r.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-gold-300 hover:text-gold-200"
+        >
+          Подробнее
+          <ExternalLink size={12} aria-hidden="true" />
+        </a>
+      )}
+    </li>
+  );
+}
 
 const TILE_TONES = {
   default: 'bg-white/10 text-slate-200',

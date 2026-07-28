@@ -594,6 +594,7 @@ async function main() {
     [/за 30 дней/i, 'показан темп занятий'],
     [/последнее занятие/i, 'показана давность активности'],
     [/Сейчас в работе/i, 'показан текущий шаг ребёнка'],
+    [/Куда сходить|в другом городе|проходит его онлайн/i, 'подсказано, где заниматься очно'],
     [/заработано за всё время/i, 'показан заработанный опыт, а не остаток'],
   ];
   for (const [re, label] of parentOnly) {
@@ -661,6 +662,64 @@ async function main() {
   } else {
     fail('кнопка ИИ-наставника не найдена');
   }
+
+  /* --------------------------------------------------- labels on a phone */
+  console.log('\nПодписи на узком экране');
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(`${BASE}/app`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1800);
+  const narrowLabels = await page.evaluate(() => {
+    const svg = document.querySelector('svg[role="application"]');
+    const texts = [...(svg?.querySelectorAll('text') || [])];
+    const stars = [...(svg?.querySelectorAll('[data-star] circle') || [])].map((el) => el.getBoundingClientRect());
+    let clashes = 0;
+    for (const t of texts) {
+      const a = t.getBoundingClientRect();
+      if (!a.width) continue;
+      for (const b of stars) {
+        if (a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom) clashes++;
+      }
+    }
+    return { texts: texts.length, clashes };
+  });
+  narrowLabels.clashes === 0
+    ? pass('на узком экране подписи не наезжают на звёзды')
+    : fail(`подписи наезжают на звёзды: ${narrowLabels.clashes}`);
+
+  const nextStrip = await page.getByText(/ваш следующий шаг/i).count();
+  nextStrip > 0 ? pass('на узком экране назван следующий шаг') : fail('на узком экране не назван следующий шаг');
+  await shot(page, 'mobile-map-labels');
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  /* ------------------------------------------------------------- plurals */
+  console.log('\nСогласование числительных');
+  const GROUPS_RU = [
+    ['навык', 'навыка', 'навыков'],
+    ['работа', 'работы', 'работ'],
+    ['очко', 'очка', 'очков'],
+    ['направление', 'направления', 'направлений'],
+    ['звезда', 'звезды', 'звёзд'],
+    ['день', 'дня', 'дней'],
+  ];
+  const badPlurals = [];
+  for (const route of ['/app', '/app/profile', '/app/parent', '/app/store', '/app/portfolio']) {
+    await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(900);
+    const t = ((await page.textContent('body')) || '').replace(/\s+/g, ' ');
+    const words = GROUPS_RU.flat().join('|');
+    for (const m of t.matchAll(new RegExp(`(?<!\\d)(\\d+)\\s+(${words})\\b`, 'g'))) {
+      const n = Number(m[1]);
+      const word = m[2];
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      const form = mod10 === 1 && mod100 !== 11 ? 0 : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20) ? 1 : 2;
+      const g = GROUPS_RU.find((gr) => gr.includes(word));
+      if (g && g[form] !== word) badPlurals.push(`${route}: «${m[0]}» → «${n} ${g[form]}»`);
+    }
+  }
+  badPlurals.length === 0
+    ? pass('числа согласованы со словами на всех экранах')
+    : fail(`несогласованные числительные: ${badPlurals.length}`, badPlurals.slice(0, 4).join(' · '));
 
   /* ------------------------------------------------------- admin is denied */
   console.log('\nЗащита админ-панели');
