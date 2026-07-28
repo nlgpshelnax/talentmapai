@@ -1,5 +1,5 @@
 import { getState, save, nextId, graph, snapshot, resetDemo } from './store';
-import { pickRecommended, describeProfile } from './generated/recommend.js';
+import { pickRecommended, describeProfile, validateAnswers } from './generated/recommend.js';
 import { computeAvailability, currentStarId } from '../lib/graph';
 
 /**
@@ -19,7 +19,7 @@ class HttpError extends Error {
   constructor(status, message, details) {
     super(message);
     this.status = status;
-    this.payload = { error: message, ...(details ? { details } : {}) };
+    this.payload = { error: message, ...(details && details.length ? { details } : {}) };
   }
 }
 
@@ -269,17 +269,27 @@ const routes = [
 
   ['POST', /^\/diagnostics\/submit$/, (ctx) => {
     const user = requireUser(ctx);
-    const answers = ctx.body.answers || {};
+
+    // Та же проверка, что и на сервере: неизвестные вопросы, выдуманные
+    // варианты и превышение лимита множественного выбора отсекаются здесь.
+    const validation = validateAnswers(ctx.body.answers);
+    if (!validation.ok) {
+      throw new HttpError(400, 'Проверьте ответы диагностики', validation.errors);
+    }
+    const answers = validation.answers;
     const g = graph();
 
-    const { ids, chosen } = pickRecommended(answers, g.constellations);
+    const { ids, chosen, highlights, confidence, answeredCount } = pickRecommended(answers, g.constellations);
     const name = ctx.body.childName || user.name;
-    const ageMap = { '3-6': 5, '7-10': 9, '11-14': 12, '15-18': 16 };
+    const ageMap = { '3-6': 5, '7-8': 7, '9-10': 9, '11-12': 11, '13-15': 14, '16-18': 17 };
 
     user.name = name;
     user.age = ageMap[answers.age] ?? user.age ?? 10;
     user.city = (answers.city || '').trim() || user.city || 'Москва';
-    user.weeklyHours = answers.weeklyHours || user.weeklyHours || '3-5 часов';
+    user.weeklyHours =
+      answers.weeklyHours && answers.weeklyHours !== 'пока не знаем'
+        ? answers.weeklyHours
+        : user.weeklyHours || '3-5 часов';
     user.recommendedGraphs = ids;
     user.onboarded = true;
 
@@ -299,12 +309,22 @@ const routes = [
         success: true,
         user: publicUser(user),
         profileText,
+        highlights,
+        confidence,
+        answeredCount,
         summary:
           `Судя по ответам, лучше всего подойдёт направление «${first?.name || 'Компьютерная графика'}»: ` +
           `оно совпадает с тем, что ребёнку уже нравится делать, и не требует резкого скачка в сложности.${restText} ` +
           `Начните с первой звезды на карте — там уже подобраны кружок в вашем городе (${user.city}), онлайн-курс и бесплатная программа. ` +
           `При ${user.weeklyHours} в неделю на первый шаг обычно уходит одна-две недели.`,
-        recommended: chosen.map((c) => ({ ...c, reason: c.reason })),
+        recommended: chosen.map((c) => ({
+          ...c,
+          reason: c.reason,
+          match: c.match,
+          weak: c.weak,
+          tooYoung: c.tooYoung,
+          minAge: c.minAge,
+        })),
       },
     };
   }],

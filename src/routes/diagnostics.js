@@ -3,12 +3,12 @@
 const express = require('express');
 
 const { dbAll, dbGet, dbRun, withTransaction } = require('../db');
-const { asyncHandler } = require('../middleware/error');
+const { ApiError, asyncHandler } = require('../middleware/error');
 const { requireAuth } = require('../middleware/auth');
 const { validate, z } = require('../middleware/validate');
 const { publicQuestions, AGE_RANGE_TO_NUMBER } = require('../services/questions');
 const { searchCities } = require('../db/cities');
-const { pickRecommended, describeProfile } = require('../services/recommend');
+const { pickRecommended, describeProfile, validateAnswers } = require('../services/recommend');
 const { summariseDiagnostics } = require('../services/ai');
 const { publicUser, publicConstellation } = require('../utils/serialize');
 
@@ -36,8 +36,11 @@ router.get(
  * Scoring is now deterministic (services/recommend.js); the LLM, when present,
  * only writes the human-facing summary text.
  */
+// Форма конверта проверяется схемой, а содержимое `answers` — по определению
+// вопросов (services/recommend.js): только существующие вопросы, только
+// разрешённые варианты, с учётом лимитов множественного выбора.
 const submitSchema = z.object({
-  answers: z.record(z.string(), z.union([z.string(), z.number()])),
+  answers: z.record(z.string(), z.union([z.string(), z.array(z.string()).max(10)])),
   childName: z.string().trim().min(1).max(60).optional(),
 });
 
@@ -47,10 +50,15 @@ router.post(
   validate(submitSchema),
   asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { answers } = req.body;
+
+    const validation = validateAnswers(req.body.answers);
+    if (!validation.ok) {
+      throw ApiError.badRequest('Проверьте ответы диагностики', validation.errors);
+    }
+    const answers = validation.answers;
 
     const constellations = await dbAll('SELECT * FROM constellations ORDER BY sort_order, id');
-    const { ids, chosen } = pickRecommended(answers, constellations);
+    const { ids, chosen, highlights, confidence, answeredCount } = pickRecommended(answers, constellations);
 
     const name = req.body.childName || req.user.name;
     const age = AGE_RANGE_TO_NUMBER[answers.age] ?? req.user.age ?? 10;
@@ -101,7 +109,17 @@ router.post(
       user: publicUser(updated),
       profileText,
       summary,
-      recommended: chosen.map((c) => ({ ...publicConstellation(c), reason: c.reason })),
+      highlights,
+      confidence,
+      answeredCount,
+      recommended: chosen.map((c) => ({
+        ...publicConstellation(c),
+        reason: c.reason,
+        match: c.match,
+        weak: c.weak,
+        tooYoung: c.tooYoung,
+        minAge: c.minAge,
+      })),
     });
   })
 );

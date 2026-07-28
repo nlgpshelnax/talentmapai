@@ -391,7 +391,7 @@ test('REGRESSION: different answers produce different recommendations', async ()
 
   const artistRes = await auth(request(app).post('/api/diagnostics/submit'), artist).send({
     answers: {
-      age: '7-10', hobby: 'draw', clubs: 'art', weeklyHours: '3-5 часов', priority: 'fun',
+      age: '7-8', hobby: 'draw', clubs: 'art', weeklyHours: '3-5 часов', priority: 'fun',
       concern: 'unknown', city: 'Москва', picture: 'paint', makeWithHands: 'drawing',
       fearSoftware: 'yes', orderOrFreedom: 'freedom', dailyTime: '30m',
     },
@@ -399,7 +399,7 @@ test('REGRESSION: different answers produce different recommendations', async ()
 
   const engineerRes = await auth(request(app).post('/api/diagnostics/submit'), engineer).send({
     answers: {
-      age: '15-18', hobby: 'build', clubs: 'digital', weeklyHours: 'больше 8 часов', priority: 'profession',
+      age: '16-18', hobby: 'build', clubs: 'digital', weeklyHours: 'больше 8 часов', priority: 'profession',
       concern: 'jumping', city: 'Казань', picture: 'draft', makeWithHands: 'model',
       fearSoftware: 'no', orderOrFreedom: 'order', dailyTime: 'more',
     },
@@ -417,6 +417,143 @@ test('REGRESSION: different answers produce different recommendations', async ()
   assert.ok(engineerRes.body.recommended.every((c) => c.reason), 'each recommendation is explained');
 });
 
+test('the questionnaire offers enough choice to be meaningful', async () => {
+  const res = await request(app).get('/api/diagnostics/questions');
+  const { questions } = res.body;
+
+  const withOptions = questions.filter((q) => q.options);
+  for (const q of withOptions) {
+    assert.ok(q.options.length >= 4, `вопрос «${q.id}» предлагает всего ${q.options.length} вариантов`);
+  }
+
+  const multi = questions.filter((q) => q.multi);
+  assert.ok(multi.length >= 2, 'должны быть вопросы с множественным выбором');
+  for (const q of multi) {
+    assert.ok(q.maxChoices >= 2, `вопрос «${q.id}» помечен multi, но лимит ${q.maxChoices}`);
+  }
+
+  // Веса не должны утекать клиенту.
+  assert.ok(!JSON.stringify(questions).includes('weights'));
+});
+
+test('REGRESSION: ответы валидируются по определению вопросов', async () => {
+  const token = (
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Валидация', email: `val-${Date.now()}@example.com`, password: 'password123' })
+  ).body.token;
+
+  const base = { age: '9-10', hobby: ['draw'], picture: 'paint', fearSoftware: 'little', orderOrFreedom: 'freedom' };
+
+  // Несуществующий вариант ответа.
+  const badOption = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { ...base, picture: 'телепортация' },
+  });
+  assert.equal(badOption.status, 400, 'выдуманный вариант должен отклоняться');
+  assert.ok(badOption.body.details.some((d) => d.field === 'picture'));
+
+  // Несуществующий вопрос.
+  const badQuestion = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { ...base, любимыйЦвет: 'синий' },
+  });
+  assert.equal(badQuestion.status, 400, 'неизвестный вопрос должен отклоняться');
+
+  // Несколько ответов там, где разрешён один.
+  const tooMany = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { ...base, picture: ['paint', 'computer'] },
+  });
+  assert.equal(tooMany.status, 400, 'одиночный вопрос не принимает массив');
+
+  // Превышение лимита множественного выбора.
+  const overLimit = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { ...base, hobby: ['draw', 'games', 'build'] },
+  });
+  assert.equal(overLimit.status, 400, 'лимит выбора должен соблюдаться');
+
+  // Взаимоисключающий вариант вместе с остальными.
+  const conflicting = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { ...base, clubs: ['none', 'art'] },
+  });
+  assert.equal(conflicting.status, 400, '«ничего не пробовали» нельзя совмещать');
+
+  // Слишком мало ответов, чтобы что-то считать.
+  const tooFew = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: { age: '9-10' },
+  });
+  assert.equal(tooFew.status, 400, 'по одному ответу карту не строят');
+
+  // Корректный набор проходит.
+  const ok = await auth(request(app).post('/api/diagnostics/submit'), token).send({ answers: base });
+  assert.equal(ok.status, 200);
+});
+
+test('оценка объясняется процентами, профилем и уверенностью', async () => {
+  const token = (
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Инженер', email: `eng-${Date.now()}@example.com`, password: 'password123' })
+  ).body.token;
+
+  const res = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+    answers: {
+      age: '11-12', hobby: ['build', 'tinker'], clubs: ['robotics'], weeklyHours: '6-8 часов',
+      priority: 'achievements', concern: 'jumping', city: 'Казань', picture: 'bricks',
+      makeWithHands: ['robot', 'model'], fearSoftware: 'no', orderOrFreedom: 'order', dailyTime: '1h',
+    },
+  });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.answeredCount, 12, 'засчитаны все двенадцать ответов');
+
+  for (const rec of res.body.recommended) {
+    assert.equal(typeof rec.match, 'number');
+    assert.ok(rec.match >= 0 && rec.match <= 100, `процент вне диапазона: ${rec.match}`);
+    assert.ok(rec.reason, 'у каждой рекомендации есть объяснение');
+  }
+
+  const matches = res.body.recommended.map((r) => r.match);
+  assert.deepEqual(matches, [...matches].sort((a, b) => b - a), 'рекомендации отсортированы по совпадению');
+  assert.ok(matches[0] >= 60, `лидер должен уверенно совпадать, получено ${matches[0]}%`);
+
+  assert.ok(res.body.highlights.length >= 3, 'показаны сильные стороны');
+  assert.equal(res.body.highlights[0].value, 100, 'сильные стороны нормированы к 100');
+  assert.ok(['high', 'medium', 'low'].includes(res.body.confidence.level));
+
+  // Профиль «конструктор + робототехника» обязан вывести технические направления.
+  const keys = res.body.recommended.map((r) => r.key);
+  assert.ok(
+    keys.some((k) => ['robotics', '3d-printing', 'engineering-graphics'].includes(k)),
+    `для технического профиля ожидались технические направления, получено: ${keys.join(', ')}`
+  );
+});
+
+test('возраст влияет на подбор: малышам не предлагают взрослые направления первыми', async () => {
+  const make = async (age) => {
+    const token = (
+      await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'Возраст', email: `age-${age}-${Date.now()}@example.com`, password: 'password123' })
+    ).body.token;
+    const res = await auth(request(app).post('/api/diagnostics/submit'), token).send({
+      answers: {
+        age, hobby: ['games'], clubs: ['coding'], picture: 'computer',
+        makeWithHands: ['site'], fearSoftware: 'love', orderOrFreedom: 'alone',
+      },
+    });
+    return res.body.recommended.map((r) => r.key);
+  };
+
+  const little = await make('7-8');
+  const teen = await make('16-18');
+
+  assert.ok(!little.includes('cybersecurity'), 'кибербезопасность не для семилетки');
+  assert.ok(!little.includes('ai-data'), 'ИИ и данные не для семилетки');
+  assert.ok(
+    teen.includes('programming-web') || teen.includes('ai-data') || teen.includes('cybersecurity'),
+    `подростку с таким профилем ожидались цифровые направления, получено: ${teen.join(', ')}`
+  );
+});
+
 test('diagnostics marks the user as onboarded and stores the answers', async () => {
   const reg = await request(app)
     .post('/api/auth/register')
@@ -425,7 +562,7 @@ test('diagnostics marks the user as onboarded and stores the answers', async () 
   assert.equal(reg.body.user.onboarded, false);
 
   await auth(request(app).post('/api/diagnostics/submit'), token).send({
-    answers: { age: '11-14', hobby: 'computer', city: 'Пермь', picture: 'computer', fearSoftware: 'no' },
+    answers: { age: '11-12', hobby: 'games', city: 'Пермь', picture: 'computer', fearSoftware: 'no', makeWithHands: ['site'] },
   });
 
   const me = await auth(request(app).get('/api/auth/me'), token);

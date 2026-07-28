@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Baby,
+  BarChart3,
+  Check,
   MapPin,
   RotateCcw,
   Sparkles,
@@ -190,15 +192,58 @@ function CityAutocomplete({ question, value, onChange, role }) {
 
 /* ---------------------------------------------------------- выбор из вариантов */
 
+/**
+ * Сетка вариантов ответа.
+ *
+ * Поддерживает и одиночный, и множественный выбор: часть вопросов по ТЗ
+ * прямо просит «выберите 1–2», а сводить увлечения ребёнка к одному пункту
+ * — значит терять половину сигнала для подбора.
+ *
+ * Роль элемента меняется вместе с режимом: radio для одиночного выбора,
+ * checkbox для множественного — иначе скринридер сообщал бы неверную семантику.
+ */
 function ChoiceGrid({ question, value, onChange, role }) {
   const optionsRef = useRef([]);
   const options = question.options || [];
+  const multi = Boolean(question.multi);
+  const maxChoices = question.maxChoices || 1;
+
+  const selectedValues = multi ? (Array.isArray(value) ? value : value ? [value] : []) : [];
+  const isSelected = (option) => (multi ? selectedValues.includes(option.value) : value === option.value);
+
+  const limitReached = multi && selectedValues.length >= maxChoices;
+
+  const toggle = (option) => {
+    if (!multi) {
+      onChange(option.value);
+      return;
+    }
+
+    // Вариант вроде «ничего не пробовали» не сочетается с остальными.
+    if (option.exclusive) {
+      onChange(selectedValues.includes(option.value) ? [] : [option.value]);
+      return;
+    }
+
+    const withoutExclusive = selectedValues.filter((v) => !options.find((o) => o.value === v)?.exclusive);
+
+    if (withoutExclusive.includes(option.value)) {
+      onChange(withoutExclusive.filter((v) => v !== option.value));
+      return;
+    }
+    if (withoutExclusive.length >= maxChoices) {
+      // Заменяем самый ранний выбор, чтобы клик всегда что-то делал,
+      // а не молча игнорировался при достигнутом лимите.
+      onChange([...withoutExclusive.slice(1), option.value]);
+      return;
+    }
+    onChange([...withoutExclusive, option.value]);
+  };
 
   const focusOption = (i) => {
     const total = options.length;
     if (!total) return;
-    const next = (i + total) % total;
-    optionsRef.current[next]?.focus();
+    optionsRef.current[(i + total) % total]?.focus();
   };
 
   const onKeyDown = (e, index) => {
@@ -216,60 +261,89 @@ function ChoiceGrid({ question, value, onChange, role }) {
       case 'Enter':
       case ' ':
         e.preventDefault();
-        onChange(options[index].value);
+        toggle(options[index]);
         break;
       default:
         break;
     }
   };
 
-  // Индекс для roving tabindex: выбранный вариант, иначе первый.
+  // Roving tabindex: фокус начинается с выбранного варианта, иначе с первого.
   const activeIndex = Math.max(
     0,
-    options.findIndex((o) => o.value === value)
+    options.findIndex((o) => isSelected(o))
   );
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={questionText(question, role)}
-      className="grid gap-3 sm:grid-cols-2"
-    >
-      {options.map((option, index) => {
-        const selected = value === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            ref={(el) => {
-              optionsRef.current[index] = el;
-            }}
-            role="radio"
-            aria-checked={selected}
-            tabIndex={index === activeIndex ? 0 : -1}
-            onClick={() => onChange(option.value)}
-            onKeyDown={(e) => onKeyDown(e, index)}
+    <div>
+      {multi && (
+        <p className="mb-3 flex items-center gap-2 text-xs text-slate-400">
+          <span
             className={cx(
-              'glass group flex items-center gap-4 rounded-2xl p-4 text-left transition-all duration-200',
-              'hover:-translate-y-0.5 hover:border-gold-400/40',
-              selected
-                ? 'border-gold-400/70 bg-gold-400/10 ring-2 ring-gold-400/40'
-                : 'border-white/10'
+              'rounded-full px-2 py-0.5 font-semibold',
+              selectedValues.length ? 'bg-gold-400/15 text-gold-300' : 'bg-white/8 text-slate-400'
             )}
           >
-            <span
-              aria-hidden="true"
+            Выбрано {selectedValues.length} из {maxChoices}
+          </span>
+          {limitReached && <span>следующий выбор заменит самый ранний</span>}
+        </p>
+      )}
+
+      <div
+        role={multi ? 'group' : 'radiogroup'}
+        aria-label={questionText(question, role)}
+        className="grid gap-3 sm:grid-cols-2"
+      >
+        {options.map((option, index) => {
+          const selected = isSelected(option);
+          return (
+            <button
+              key={option.value}
+              type="button"
+              ref={(el) => {
+                optionsRef.current[index] = el;
+              }}
+              role={multi ? 'checkbox' : 'radio'}
+              aria-checked={selected}
+              tabIndex={index === activeIndex ? 0 : -1}
+              onClick={() => toggle(option)}
+              onKeyDown={(e) => onKeyDown(e, index)}
               className={cx(
-                'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl transition-colors',
-                selected ? 'bg-gold-400/20' : 'bg-space-700 group-hover:bg-space-600'
+                'glass group flex items-center gap-3.5 rounded-2xl p-3.5 text-left transition-all duration-200',
+                'hover:-translate-y-0.5 hover:border-gold-400/40',
+                selected ? 'border-gold-400/70 bg-gold-400/10 ring-2 ring-gold-400/40' : 'border-white/10'
               )}
             >
-              {option.icon}
-            </span>
-            <span className="text-base font-medium text-slate-100">{option.label}</span>
-          </button>
-        );
-      })}
+              <span
+                aria-hidden="true"
+                className={cx(
+                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl transition-colors',
+                  selected ? 'bg-gold-400/20' : 'bg-space-700 group-hover:bg-space-600'
+                )}
+              >
+                {option.icon}
+              </span>
+
+              <span className="min-w-0 flex-1 text-[15px] font-medium leading-snug text-slate-100">
+                {option.label}
+              </span>
+
+              {multi && (
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'grid h-5 w-5 shrink-0 place-items-center rounded-md border transition',
+                    selected ? 'border-gold-400 bg-gold-400 text-space-950' : 'border-white/25'
+                  )}
+                >
+                  {selected && <Check size={13} strokeWidth={3} />}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -306,8 +380,25 @@ function ChildInterstitial({ onContinue, headingRef, role }) {
 
 /* --------------------------------------------------------------- экран итога */
 
+const CONFIDENCE_TONE = {
+  high: { cls: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', text: 'высокая точность подбора' },
+  medium: { cls: 'bg-gold-400/15 text-gold-300 border-gold-400/30', text: 'средняя точность подбора' },
+  low: { cls: 'bg-slate-400/15 text-slate-300 border-slate-400/30', text: 'предварительный результат' },
+};
+
+/**
+ * Экран результата первичной диагностики.
+ *
+ * Показывает не просто список направлений, а саму оценку: процент совпадения
+ * по каждому направлению, разбор сильных сторон и честную отметку о том,
+ * насколько результату можно доверять. Без этого «рекомендация» выглядит как
+ * произвольный выбор, а не как вывод из ответов.
+ */
 function ResultScreen({ result, onOpenMap, onRestart }) {
   const recommended = Array.isArray(result.recommended) ? result.recommended : [];
+  const highlights = Array.isArray(result.highlights) ? result.highlights : [];
+  const confidence = CONFIDENCE_TONE[result.confidence?.level] || CONFIDENCE_TONE.medium;
+
   return (
     <div>
       <div className="text-center">
@@ -318,15 +409,46 @@ function ResultScreen({ result, onOpenMap, onRestart }) {
           <Stars size={42} />
         </span>
         <h1 className="mt-6 text-3xl font-bold text-white sm:text-4xl">Ваша карта готова!</h1>
+
         {result.profileText && (
           <p className="mx-auto mt-4 max-w-xl text-balance text-lg font-semibold text-gold-300">
             {result.profileText}
           </p>
         )}
-        {result.summary && (
-          <p className="mx-auto mt-3 max-w-xl text-balance text-slate-300">{result.summary}</p>
-        )}
+
+        <p className={cx('mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold', confidence.cls)}>
+          <BarChart3 size={13} aria-hidden="true" />
+          {confidence.text}
+          {result.answeredCount ? ` · ответов: ${result.answeredCount} из 12` : ''}
+        </p>
+
+        {result.summary && <p className="mx-auto mt-4 max-w-xl text-balance text-slate-300">{result.summary}</p>}
       </div>
+
+      {/* Разбор профиля: из чего сложилась оценка */}
+      {highlights.length > 0 && (
+        <section className="glass mx-auto mt-9 max-w-2xl rounded-2xl p-5" aria-labelledby="profile-heading">
+          <h2 id="profile-heading" className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Что мы увидели в ответах
+          </h2>
+          <ul className="space-y-3">
+            {highlights.map((h) => (
+              <li key={h.tag}>
+                <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-slate-200">{h.label}</span>
+                  <span className="shrink-0 tabular-nums text-xs text-slate-500">{h.value}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-[width] duration-700"
+                    style={{ width: `${h.value}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {recommended.length > 0 && (
         <div className="mt-9">
@@ -340,20 +462,58 @@ function ResultScreen({ result, onOpenMap, onRestart }) {
                 className="glass flex flex-col gap-3 rounded-2xl p-5"
                 style={item.accent ? { borderColor: `${item.accent}55` } : undefined}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <span
                     aria-hidden="true"
-                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-space-700 text-2xl"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-space-700 text-2xl"
                     style={item.accent ? { backgroundColor: `${item.accent}22` } : undefined}
                   >
                     {item.icon}
                   </span>
-                  <h3 className="text-lg font-bold text-white">{item.name}</h3>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold leading-tight text-white">{item.name}</h3>
+                    {typeof item.match === 'number' &&
+                      (item.weak ? (
+                        <p className="mt-0.5 text-xs font-semibold text-slate-400">для знакомства</p>
+                      ) : (
+                        <p className="mt-0.5 text-xs font-semibold" style={{ color: item.accent || '#fbbf24' }}>
+                          совпадение {item.match}%
+                        </p>
+                      ))}
+                  </div>
                 </div>
-                {item.reason && <p className="text-sm text-slate-300">{item.reason}</p>}
-                {item.description && (
-                  <p className="mt-auto text-xs text-slate-500">{item.description}</p>
+
+                {typeof item.match === 'number' && !item.weak && (
+                  <div
+                    className="h-1.5 overflow-hidden rounded-full bg-white/8"
+                    role="progressbar"
+                    aria-valuenow={item.match}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Совпадение с направлением ${item.name}`}
+                  >
+                    <div
+                      className="h-full rounded-full transition-[width] duration-700"
+                      style={{ width: `${item.match}%`, backgroundColor: item.accent || '#fbbf24' }}
+                    />
+                  </div>
                 )}
+
+                {item.weak && (
+                  <p className="rounded-lg bg-space-800/70 px-2.5 py-1.5 text-xs text-slate-400">
+                    По ответам это направление пока не выделяется — добавили как вариант попробовать.
+                  </p>
+                )}
+
+                {item.reason && <p className="text-sm text-slate-300">{item.reason}</p>}
+
+                {item.tooYoung && (
+                  <p className="rounded-lg bg-space-800/70 px-2.5 py-1.5 text-xs text-slate-400">
+                    Обычно начинают с {item.minAge} лет — можно попробовать позже или в облегчённом формате.
+                  </p>
+                )}
+
+                {item.description && <p className="mt-auto text-xs text-slate-500">{item.description}</p>}
               </article>
             ))}
           </div>
@@ -446,7 +606,10 @@ export default function Diagnostics() {
   const current = questions[index];
   const isLast = questions.length > 0 && index === questions.length - 1;
   const answer = current ? answers[current.id] : undefined;
-  const answered = typeof answer === 'string' && answer.trim().length > 0;
+  // Вопрос считается отвеченным и для одиночного, и для множественного выбора.
+  const answered = Array.isArray(answer)
+    ? answer.length > 0
+    : typeof answer === 'string' && answer.trim().length > 0;
 
   // Фокус на заголовок при смене вопроса / заставки / появлении итога.
   useEffect(() => {
@@ -624,7 +787,7 @@ export default function Diagnostics() {
                     <ChoiceGrid
                       role={role}
                       question={current}
-                      value={typeof answer === 'string' ? answer : ''}
+                      value={current.multi ? (Array.isArray(answer) ? answer : []) : typeof answer === 'string' ? answer : ''}
                       onChange={(val) => setAnswer(current.id, val)}
                     />
                   </div>

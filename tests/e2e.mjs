@@ -42,6 +42,7 @@ async function shot(page, name) {
 // Тексты всех вопросов, которые видит пользователь, — чтобы поймать повторы.
 let askedOnRegister = [];
 const askedQuestions = [];
+let multiAnswered = 0;
 
 const uniqueEmail = () => `e2e-${Date.now()}-${Math.floor(Math.random() * 1e4)}@example.com`;
 
@@ -155,10 +156,22 @@ async function main() {
 
     const buildBtn = page.getByRole('button', { name: /построить карту/i }).first();
     const radios = page.getByRole('radio');
+    // Часть вопросов допускает несколько ответов — там варианты это чекбоксы.
+    const checks = page.getByRole('checkbox');
     const cityField = page.locator('input[role="combobox"], input[placeholder*="город" i]').first();
 
     if (await radios.count()) {
       await radios.first().click();
+      answered++;
+    } else if (await checks.count()) {
+      await checks.first().click();
+      // На вопросах с лимитом 2+ отмечаем второй вариант, чтобы проверить
+      // множественный выбор, а не только первый клик.
+      if ((await checks.count()) > 1) {
+        await page.waitForTimeout(150);
+        await checks.nth(1).click();
+        multiAnswered++;
+      }
       answered++;
     } else if (await cityField.count()) {
       await cityField.fill('Москва');
@@ -204,9 +217,28 @@ async function main() {
     ? pass('ни возраст, ни город, ни роль не спрашиваются дважды')
     : fail('повторные вопросы', duplicated.map(([n, re]) => `${n} × ${countAsks(re)}`).join(', '));
 
+  multiAnswered > 0
+    ? pass(`вопросы с множественным выбором работают (отмечено по два варианта: ${multiAnswered})`)
+    : fail('множественный выбор не сработал ни на одном вопросе');
+
   await shot(page, 'diagnostics-result');
 
   const resultText = await page.textContent('body');
+
+  // Результат должен быть оценкой, а не просто списком: проценты совпадения,
+  // разбор сильных сторон и отметка о точности подбора.
+  const percents = (resultText || '').match(/совпадение\s+(\d{1,3})%/g) || [];
+  percents.length >= 2
+    ? pass('показаны проценты совпадения', percents.join(', '))
+    : fail('нет процентов совпадения на экране результата');
+
+  /что мы увидели в ответах/i.test(resultText || '')
+    ? pass('показан разбор профиля')
+    : fail('нет разбора профиля');
+
+  /(высокая|средняя|предварительн\w*) точность подбора|предварительный результат/i.test(resultText || '')
+    ? pass('показана точность подбора')
+    : fail('нет отметки о точности подбора');
   /рекоменд|направлен|созвезд/i.test(resultText || '')
     ? pass('экран результата показывает рекомендации')
     : fail('экран результата', 'рекомендации не найдены');
