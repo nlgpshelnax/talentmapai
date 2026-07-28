@@ -70,6 +70,25 @@ function persist() {
 }
 
 function seedAccounts() {
+  // Wrap a value in guillemets only when it is not already quoted, so a title
+  // that already carries « » (e.g. store items) is not double-wrapped into
+  // broken «…«…»…» nesting.
+  const quoteValue = (value) => {
+    const s = String(value ?? '');
+    return /[«»]/.test(s) ? s : `«${s}»`;
+  };
+
+  // Staggered timestamps for the seeded history: each successive event is more
+  // recent than the last. The feed sorts by descending id (newest first), so
+  // creation order lines up with chronological order and the times look real
+  // instead of every row sharing the same instant.
+  let historyCursorMs = 72 * 3600 * 1000; // first-created event = ~3 days ago
+  const nextLogTime = () => {
+    const at = new Date(Date.now() - historyCursorMs).toISOString();
+    historyCursorMs = Math.max(0, historyCursorMs - 28 * 3600 * 1000);
+    return at;
+  };
+
   for (const account of DEMO_ACCOUNTS) {
     state.users.push({
       id: state.nextId++,
@@ -104,12 +123,13 @@ function seedAccounts() {
     .slice(0, 2);
 
   for (const star of firstTwo) {
-    state.progress.push({ userId: demo.id, starId: star.id, at: nowIso() });
+    const at = nextLogTime();
+    state.progress.push({ userId: demo.id, starId: star.id, at });
     state.logs.push({
       id: state.nextId++,
       userId: demo.id,
-      text: `Отмечен выполненным шаг: «${star.name}». Получено 50 XP!`,
-      createdAt: nowIso(),
+      text: `Отмечен выполненным шаг: ${quoteValue(star.name)}. Получено 50 XP!`,
+      createdAt: at,
     });
   }
 
@@ -132,7 +152,7 @@ function seedAccounts() {
     id: state.nextId++,
     userId: demo.id,
     text: 'Успешно пройдена диагностика интересов.',
-    createdAt: nowIso(),
+    createdAt: nextLogTime(),
   });
 }
 

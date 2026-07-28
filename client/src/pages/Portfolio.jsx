@@ -261,6 +261,11 @@ function UploadModal({ open, onClose, constellations, stars, onUploaded }) {
   const file = picked?.file || null;
   const previewUrl = picked?.url || '';
 
+  // Кнопка отправки сообщает о своих требованиях заранее: нужен файл и название
+  // не короче 2 символов. Так пользователь видит условие до клика, а не ошибку
+  // после него.
+  const canSubmit = Boolean(file) && title.trim().length >= 2;
+
   // Единственная задача эффекта — отозвать object URL при смене файла/размонтировании.
   useEffect(() => {
     if (!previewUrl) return undefined;
@@ -346,7 +351,7 @@ function UploadModal({ open, onClose, constellations, stars, onUploaded }) {
           <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
             Отмена
           </Button>
-          <Button type="submit" form="portfolio-upload-form" loading={submitting}>
+          <Button type="submit" form="portfolio-upload-form" loading={submitting} disabled={!canSubmit}>
             <Upload size={18} aria-hidden="true" />
             Загрузить
           </Button>

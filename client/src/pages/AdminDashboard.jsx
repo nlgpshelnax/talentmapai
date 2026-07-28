@@ -265,8 +265,20 @@ export default function AdminDashboard() {
         {loading ? (
           <Spinner label="Загружаем админ-панель…" />
         ) : tab === 'graph' ? (
-          <div id="panel-graph" role="tabpanel" aria-labelledby="tab-graph" className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="order-2 min-h-[520px] lg:order-1">
+          <div
+            id="panel-graph"
+            role="tabpanel"
+            aria-labelledby="tab-graph"
+            className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]"
+          >
+            {/*
+              The canvas gets its own bounded height (clamp between a sane
+              minimum and ~68vh) instead of being stretched to match the
+              taller sidebar. `items-start` stops the grid row from stretching,
+              and the sidebar scrolls on its own so a long constellation list
+              never drags the canvas to 1000px+ of mostly-blank space.
+            */}
+            <div className="order-2 min-h-[520px] lg:order-1 lg:h-[clamp(520px,68vh,760px)]">
               <GraphCanvas
                 constellation={selectedConstellation}
                 stars={graph.stars}
@@ -277,7 +289,7 @@ export default function AdminDashboard() {
                 onPositions={mergePositions}
               />
             </div>
-            <div className="order-1 space-y-4 lg:order-2">
+            <div className="order-1 space-y-4 lg:order-2 lg:max-h-[clamp(520px,68vh,760px)] lg:overflow-y-auto lg:pr-1">
               <ConstellationPanel
                 constellations={graph.constellations}
                 stars={graph.stars}

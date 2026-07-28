@@ -137,6 +137,42 @@ async function seedAdmin() {
 }
 
 /**
+ * Wrap a value in guillemets for a log line, but only if it is not already
+ * quoted. Store titles like `Аватар «Космонавт»` carry their own « », so
+ * wrapping them again produces broken nesting («…«…»…»). When the value is
+ * already quoted we leave it as-is; otherwise we add the outer « ».
+ */
+function quoteValue(value) {
+  const s = String(value ?? '');
+  return /[«»]/.test(s) ? s : `«${s}»`;
+}
+
+/**
+ * SQLite stores history timestamps as "YYYY-MM-DD HH:MM:SS" in UTC (the
+ * column default is `datetime('now')`). This renders a Date the same way so a
+ * seeded row is indistinguishable from one the app writes at runtime.
+ */
+function sqliteUtc(date) {
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Staggered timestamps for seeded history. Every row used to be written with
+ * `datetime('now')`, so the activity feed showed the same minute on every line
+ * and looked fake. This spreads events across recent history: each successive
+ * seeded event is more recent than the last, so — because the feed sorts by
+ * descending id (newest first) — creation order matches chronological order.
+ */
+function makeHistoryClock({ start, stepHours }) {
+  let cursor = start; // ms before "now" applied to the FIRST-created event
+  return () => {
+    const at = sqliteUtc(new Date(Date.now() - cursor));
+    cursor = Math.max(0, cursor - stepHours * 3600 * 1000);
+    return at;
+  };
+}
+
+/**
  * Demo account from the specification: София, 9 лет, Москва.
  * Seeded with a little progress so the map, portfolio and history all have
  * something to show on a fresh install.
@@ -163,11 +199,16 @@ async function seedDemoUser() {
     [recommended[0]]
   );
 
+  // Spread the seeded history across the last few days (oldest event first,
+  // each next one more recent) so the feed reads like real activity.
+  const nextLogTime = makeHistoryClock({ start: 72 * 3600 * 1000, stepHours: 28 });
+
   for (const star of firstStars) {
     await dbRun('INSERT OR IGNORE INTO user_progress (user_id, star_id) VALUES (?, ?)', [userId, star.id]);
-    await dbRun('INSERT INTO history_logs (user_id, log_text) VALUES (?, ?)', [
+    await dbRun('INSERT INTO history_logs (user_id, log_text, created_at) VALUES (?, ?, ?)', [
       userId,
-      `Отмечен выполненным шаг: «${star.name}». Получено ${config.gamification.xpPerStar} XP!`,
+      `Отмечен выполненным шаг: ${quoteValue(star.name)}. Получено ${config.gamification.xpPerStar} XP!`,
+      nextLogTime(),
     ]);
   }
 
@@ -186,9 +227,10 @@ async function seedDemoUser() {
     );
   }
 
-  await dbRun('INSERT INTO history_logs (user_id, log_text) VALUES (?, ?)', [
+  await dbRun('INSERT INTO history_logs (user_id, log_text, created_at) VALUES (?, ?, ?)', [
     userId,
     'Успешно пройдена диагностика интересов.',
+    nextLogTime(),
   ]);
 
   return userId;

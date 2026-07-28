@@ -3,18 +3,23 @@ import {
   ShieldCheck,
   Lock,
   Star,
-  Trophy,
   Images,
   Crown,
   History,
   RefreshCw,
   Info,
+  Activity,
+  CalendarClock,
+  Target,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 
 import { useAppState } from '../context/AppStateContext';
 import { useAuth } from '../context/AuthContext';
 import api, { errorMessage } from '../lib/api';
-import { constellationProgress } from '../lib/graph';
+import { progressIn } from '../lib/graph';
+import { skills, points, directions, plural } from '../lib/plural';
 import { Button, Field, Input, Alert, Spinner, Badge, ProgressRing, cx } from '../components/ui';
 
 /**
@@ -185,10 +190,36 @@ function DashboardContent({ hasPin }) {
     return () => controller.abort();
   }, [loadSummary]);
 
-  const progress = useMemo(
-    () => constellationProgress(state?.constellations, state?.stars, state?.completedStars),
-    [state?.constellations, state?.stars, state?.completedStars]
+  const user = state?.user || {};
+
+  /**
+   * Программа ребёнка — направления, подобранные диагностикой. Прогресс во всём
+   * приложении считается по ней, поэтому в шапке карты, в профиле и здесь
+   * стоит одно и то же число.
+   */
+  const programmeIds = useMemo(
+    () => (user.recommendedGraphs?.length ? user.recommendedGraphs : (state?.constellations || []).map((c) => c.id)),
+    [user.recommendedGraphs, state?.constellations]
   );
+
+  const programme = useMemo(
+    () => (state?.constellations || []).filter((c) => programmeIds.map(Number).includes(Number(c.id))),
+    [state?.constellations, programmeIds]
+  );
+
+  /** Что ребёнок проходит прямо сейчас — и куда с этим можно сходить в его городе. */
+  const nowLearning = useMemo(() => {
+    const star = (state?.stars || []).find((s) => s.id === state?.currentStarId);
+    if (!star) return null;
+    const constellation = (state?.constellations || []).find((c) => c.id === star.constellationId);
+    const city = user.city;
+    const forStar = (state?.resources || []).filter((r) => r.starId === star.id);
+    const offline = forStar.filter(
+      (r) => r.type === 'offline' && (!city || !r.city || r.city === 'Все города' || r.city === city)
+    );
+    const online = forStar.filter((r) => r.type !== 'offline');
+    return { star, constellation, offline, online };
+  }, [state?.stars, state?.currentStarId, state?.constellations, state?.resources, user.city]);
 
   async function handleUpgrade() {
     if (subBusyRef.current) return;
@@ -207,16 +238,34 @@ function DashboardContent({ hasPin }) {
     }
   }
 
-  const user = state?.user || {};
   const isPro = user.subscription === 'pro';
   const logs = (state?.historyLogs || []).slice(0, 6);
-  const withStars = progress.filter((c) => c.total > 0).sort((a, b) => b.percent - a.percent);
 
-  const percent = summary?.percent ?? 0;
-  const completed = summary?.completed ?? 0;
-  const total = summary?.total ?? 0;
-  const works = summary?.works ?? 0;
-  const xp = summary?.xp ?? user.xp ?? 0;
+  // Сводка приходит с сервера, но пока она летит — считаем локально по тем же
+  // правилам, чтобы блок не мигал нулями.
+  const local = progressIn(state?.stars, state?.completedStars, programmeIds);
+  const percent = summary?.percent ?? local.percent;
+  const completed = summary?.completed ?? local.done;
+  const total = summary?.total ?? local.total;
+  const workCount = summary?.works ?? (state?.portfolio?.length || 0);
+  // Заработано за всё время, а не остаток на счету: потратив опыт в магазине,
+  // ребёнок обнулял баланс и в отчёте выглядел бездельником.
+  const xpEarned = summary?.xpEarned ?? completed * 50;
+
+
+  // Темп приходит с сервера: обращаться к часам во время рендера нельзя.
+  const perMonth = summary?.pace?.month ?? 0;
+  const perWeek = summary?.pace?.week ?? 0;
+  const daysSince = summary?.daysSinceActivity ?? null;
+  const sinceLabel =
+    daysSince == null
+      ? 'нет данных'
+      : daysSince === 0
+        ? 'сегодня'
+        : daysSince === 1
+          ? 'вчера'
+          : `${plural(daysSince, `${daysSince} день`, `${daysSince} дня`, `${daysSince} дней`)} назад`;
+  const paceTone = perWeek > 0 ? 'good' : perMonth > 0 ? 'warn' : 'idle';
 
   return (
     <div className="space-y-6">
@@ -241,66 +290,143 @@ function DashboardContent({ hasPin }) {
         </div>
       ) : (
         <>
-          {/* Основные показатели */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-            <div className="glass flex flex-col items-center gap-4 rounded-3xl p-6">
-              <h2 className="self-start text-lg font-bold text-white">Общий прогресс</h2>
-              <ProgressRing value={percent} sublabel="навыков" />
-              <p className="text-sm text-slate-400">
-                Освоено <span className="font-semibold text-gold-300">{completed}</span> из{' '}
-                <span className="font-semibold text-slate-200">{total}</span>
-              </p>
+          {/* Чей отчёт: родитель смотрит на ребёнка, а не на «свой» профиль */}
+          <div className="glass-strong rounded-3xl p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wider text-slate-500">Отчёт по ребёнку</p>
+                <h2 className="mt-1 truncate font-display text-2xl font-extrabold text-white">{user.name}</h2>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+                  {user.age != null && (
+                    <span>{plural(user.age, `${user.age} год`, `${user.age} года`, `${user.age} лет`)}</span>
+                  )}
+                  {user.city && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin size={14} aria-hidden="true" />
+                      {user.city}
+                    </span>
+                  )}
+                  {user.weeklyHours && <span>план: {user.weeklyHours} в неделю</span>}
+                </div>
+              </div>
+              <div className="shrink-0">
+                {isPro ? <Badge tone="gold">PRO</Badge> : <Badge tone="neutral">Пробный доступ</Badge>}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1 lg:content-start">
-              <StatTile icon={<Trophy size={20} aria-hidden="true" />} value={completed} label="навыков пройдено" />
-              <StatTile icon={<Images size={20} aria-hidden="true" />} value={works} label="работ в портфолио" />
-              <StatTile icon={<Star size={20} aria-hidden="true" />} value={`${xp} XP`} label="накоплено опыта" tone="gold" />
-            </div>
-          </div>
-
-          {/* Разбивка по направлениям */}
-          <div className="glass rounded-3xl p-6">
-            <h2 className="mb-4 text-lg font-bold text-white">Прогресс по направлениям</h2>
-            {withStars.length === 0 ? (
-              <p className="text-sm text-slate-400">Пока нет данных по направлениям.</p>
-            ) : (
-              <ul className="grid gap-4 sm:grid-cols-2">
-                {withStars.map((c) => (
-                  <li key={c.id}>
-                    <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                      <span className="flex min-w-0 items-center gap-2 text-slate-200">
-                        {c.icon && (
-                          <span aria-hidden="true" className="text-base">
-                            {c.icon}
-                          </span>
-                        )}
-                        <span className="truncate font-medium">{c.name}</span>
-                      </span>
-                      <span className="shrink-0 tabular-nums text-slate-400">
-                        {c.done}/{c.total}
-                      </span>
-                    </div>
-                    <div
-                      className="h-2 overflow-hidden rounded-full bg-white/8"
-                      role="progressbar"
-                      aria-valuenow={c.percent}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`${c.name}: ${c.percent}%`}
+            {programme.length > 0 && (
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <p className="mb-2 text-xs text-slate-500">
+                  Программа — {directions(programme.length)} по итогам диагностики
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {programme.map((c) => (
+                    <span
+                      key={c.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1 text-sm text-slate-200"
                     >
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-all duration-700"
-                        style={{ width: `${c.percent}%` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                      {c.icon && <span aria-hidden="true">{c.icon}</span>}
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Подписка */}
+          {/* Занимается ли ребёнок сейчас — главный вопрос родителя */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+            <div className="glass flex flex-col items-center gap-4 rounded-3xl p-6">
+              <h2 className="self-start text-lg font-bold text-white">Прогресс по программе</h2>
+              <ProgressRing value={percent} sublabel="по открытым направлениям" />
+              <p className="text-center text-sm text-slate-400">
+                Освоено <span className="font-semibold text-gold-300">{completed}</span> из{' '}
+                <span className="font-semibold text-slate-200">{skills(total)}</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:content-start">
+              <StatTile
+                icon={<Activity size={20} aria-hidden="true" />}
+                value={perMonth}
+                label={`${plural(perMonth, 'навык', 'навыка', 'навыков')} за 30 дней`}
+                tone={paceTone === 'good' ? 'good' : paceTone === 'warn' ? 'warn' : 'default'}
+              />
+              <StatTile
+                icon={<CalendarClock size={20} aria-hidden="true" />}
+                value={sinceLabel}
+                label="последнее занятие"
+                small
+                tone={daysSince != null && daysSince > 14 ? 'warn' : 'default'}
+              />
+              <StatTile icon={<Images size={20} aria-hidden="true" />} value={workCount} label={`${plural(workCount, 'работа', 'работы', 'работ')} в портфолио`} />
+              <StatTile
+                icon={<Star size={20} aria-hidden="true" />}
+                value={`${xpEarned} XP`}
+                label="заработано за всё время"
+                tone="gold"
+              />
+            </div>
+          </div>
+
+          {/* Чем ребёнок занят прямо сейчас и куда с этим пойти */}
+          {nowLearning && (
+            <div className="glass rounded-3xl p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+                <Target size={20} className="text-gold-400" aria-hidden="true" />
+                Сейчас в работе
+              </h2>
+              <div className="rounded-2xl bg-space-800/60 p-4">
+                {nowLearning.constellation && (
+                  <p className="text-xs text-slate-500">
+                    {nowLearning.constellation.icon} {nowLearning.constellation.name}
+                  </p>
+                )}
+                <p className="mt-1 font-semibold text-white">{nowLearning.star.name}</p>
+                {nowLearning.star.description && (
+                  <p className="mt-1.5 text-sm text-slate-400">{nowLearning.star.description}</p>
+                )}
+              </div>
+
+              {nowLearning.offline.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2.5 text-sm font-medium text-slate-300">
+                    Куда сходить{user.city ? ` в городе ${user.city}` : ''}
+                  </p>
+                  <ul className="space-y-2.5">
+                    {nowLearning.offline.map((r) => (
+                      <li key={r.id} className="rounded-2xl border border-white/10 p-3.5">
+                        <p className="text-sm font-medium text-slate-100">{r.title}</p>
+                        {(r.detail1 || r.detail2) && (
+                          <p className="mt-0.5 text-xs text-slate-400">{[r.detail1, r.detail2].filter(Boolean).join(' · ')}</p>
+                        )}
+                        {r.link && (
+                          <a
+                            href={r.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-gold-300 hover:text-gold-200"
+                          >
+                            Подробнее
+                            <ExternalLink size={12} aria-hidden="true" />
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {nowLearning.offline.length === 0 && nowLearning.online.length > 0 && (
+                <p className="mt-4 text-sm text-slate-400">
+                  Очных занятий по этому шагу{user.city ? ` в городе ${user.city}` : ''} пока нет — ребёнок проходит его
+                  онлайн, материалы открыты на карте.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Подписка — платит родитель, поэтому блок остаётся здесь */}
           <div className="glass rounded-3xl p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -315,7 +441,7 @@ function DashboardContent({ hasPin }) {
                   <p className="mt-0.5 max-w-md text-sm text-slate-400">
                     {isPro
                       ? 'Активна PRO-подписка — открыты все созвездия и материалы.'
-                      : 'Оформите PRO, чтобы открыть все созвездия и расширенные материалы.'}
+                      : `На пробном плане открыто ${directions(programme.length)} и первые шаги в них. PRO открывает весь каталог и награды дороже ${points(150)}.`}
                   </p>
                 </div>
               </div>
@@ -366,19 +492,28 @@ function DashboardContent({ hasPin }) {
 
 /* ----------------------------------------------------------------- StatTile */
 
-function StatTile({ icon, value, label, tone = 'default' }) {
+const TILE_TONES = {
+  default: 'bg-white/10 text-slate-200',
+  gold: 'bg-gold-400/15 text-gold-300',
+  good: 'bg-emerald-400/15 text-emerald-300',
+  warn: 'bg-amber-400/15 text-amber-300',
+};
+
+function StatTile({ icon, value, label, tone = 'default', small = false }) {
   return (
     <div className="glass flex items-center gap-4 rounded-2xl p-5">
-      <div
-        className={cx(
-          'grid h-12 w-12 shrink-0 place-items-center rounded-2xl',
-          tone === 'gold' ? 'bg-gold-400/15 text-gold-300' : 'bg-white/10 text-slate-200'
-        )}
-      >
+      <div className={cx('grid h-12 w-12 shrink-0 place-items-center rounded-2xl', TILE_TONES[tone] || TILE_TONES.default)}>
         {icon}
       </div>
-      <div>
-        <div className="font-display text-2xl font-extrabold text-white tabular-nums">{value}</div>
+      <div className="min-w-0">
+        <div
+          className={cx(
+            'font-display font-extrabold text-white tabular-nums',
+            small ? 'text-lg' : 'text-2xl'
+          )}
+        >
+          {value}
+        </div>
         <p className="text-xs text-slate-400">{label}</p>
       </div>
     </div>

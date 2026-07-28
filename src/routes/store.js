@@ -2,6 +2,7 @@
 
 const express = require('express');
 
+const config = require('../config');
 const { dbAll, dbGet, dbRun, withTransaction } = require('../db');
 const { ApiError, asyncHandler } = require('../middleware/error');
 const { requireAuth } = require('../middleware/auth');
@@ -11,6 +12,19 @@ const { publicStoreItem, publicUser } = require('../utils/serialize');
 const router = express.Router();
 
 const EQUIP_COLUMN = { avatar: 'equipped_avatar', frame: 'equipped_frame', title: 'equipped_title' };
+
+/**
+ * A cosmetic is "pro only" for this user when its price exceeds the total XP a
+ * trial account can ever earn (trialStarLimit skills × xpPerStar each). At 3×50
+ * that ceiling is 150 XP, so a 200 XP title is mathematically unreachable on the
+ * free plan — offering it as a normal "keep going" purchase would be a lie.
+ * The ceiling is derived from config, never hardcoded.
+ */
+const trialXpCeiling = () => config.gamification.trialStarLimit * config.gamification.xpPerStar;
+
+function isProOnly(user, item) {
+  return user.subscription_status !== 'pro' && item.price > trialXpCeiling();
+}
 
 /** Catalogue, annotated with what this user already owns and wears. */
 router.get(
@@ -34,6 +48,7 @@ router.get(
         ...publicStoreItem(i),
         owned: ownedIds.has(i.id),
         affordable: (req.user.xp_points || 0) >= i.price,
+        proOnly: isProOnly(req.user, i),
       })),
     });
   })
@@ -59,6 +74,12 @@ router.post(
 
     const owned = await dbGet('SELECT 1 FROM purchases WHERE user_id = ? AND item_id = ?', [userId, item.id]);
     if (owned) throw ApiError.conflict('Этот предмет уже куплен');
+
+    // Reject a PRO-only item before the funds check, so a trial user hears the
+    // real reason ("needs PRO") instead of a misleading "not enough XP".
+    if (isProOnly(req.user, item)) {
+      throw new ApiError(402, 'Этот предмет доступен с подпиской PRO');
+    }
 
     // Re-read XP inside the transaction rather than trusting the request-time copy.
     await withTransaction(async () => {

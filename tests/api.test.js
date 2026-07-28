@@ -300,7 +300,10 @@ test('REGRESSION: the purchase price comes from the database, not the request', 
   await dbRun('UPDATE users SET xp_points = 500 WHERE id = ?', [outsiderId]);
 
   const store = await auth(request(app).get('/api/store'), outsiderToken);
-  const item = store.body.items.find((i) => i.price === 200);
+  // Берём самый дорогой предмет, доступный на бесплатном плане: предметы
+  // дороже потолка пробного периода теперь отдают 402 (PRO), и проверка
+  // цены на них ничего не проверяла бы.
+  const item = store.body.items.filter((i) => !i.proOnly && !i.owned).sort((a, b) => b.price - a.price)[0];
 
   // The prototype read itemPrice straight from the body — this would be free.
   const res = await auth(request(app).post('/api/store/buy'), outsiderToken).send({
@@ -356,6 +359,71 @@ test('an unowned item cannot be equipped', async () => {
     type: notOwned.type,
   });
   assert.equal(res.status, 403);
+});
+
+/* ---------------------------------------------------- store: PRO-only items */
+
+// Дорогие предметы (звания за 200 XP) недостижимы на бесплатном плане:
+// потолок пробного аккаунта — trialStarLimit × xpPerStar = 3 × 50 = 150 XP.
+// Отдельный пользователь, регистрируемый в первом тесте блока и переиспользуемый
+// далее по порядку (как это уже сделано для outsider-тестов магазина выше).
+let proToken;
+let proUserId;
+
+test('REGRESSION: пробный пользователь видит proOnly на предметах дороже потолка', async () => {
+  const reg = await request(app)
+    .post('/api/auth/register')
+    .send({ name: 'Пробный', email: `pro-gate-${Date.now()}@example.com`, password: 'password123' });
+  assert.equal(reg.status, 201);
+  proToken = reg.body.token;
+  proUserId = reg.body.user.id;
+
+  const store = await auth(request(app).get('/api/store'), proToken);
+  assert.equal(store.status, 200);
+
+  const expensive = store.body.items.filter((i) => i.price === 200);
+  const cheap = store.body.items.filter((i) => i.price === 100);
+  assert.ok(expensive.length >= 1, 'в каталоге есть звания за 200 XP');
+  assert.ok(cheap.length >= 1, 'в каталоге есть аватары за 100 XP');
+
+  assert.ok(expensive.every((i) => i.proOnly === true), '200 XP недостижимы на бесплатном плане');
+  assert.ok(cheap.every((i) => i.proOnly === false), '100 XP доступны без подписки');
+});
+
+test('REGRESSION: покупка proOnly предмета пробным пользователем возвращает 402 с сообщением про PRO', async () => {
+  // Даём заведомо достаточно XP, чтобы отказ был именно про PRO, а не про нехватку опыта.
+  await dbRun('UPDATE users SET xp_points = 1000 WHERE id = ?', [proUserId]);
+
+  const store = await auth(request(app).get('/api/store'), proToken);
+  const locked = store.body.items.find((i) => i.proOnly && !i.owned);
+  assert.ok(locked, 'должен найтись недоступный без PRO предмет');
+
+  const res = await auth(request(app).post('/api/store/buy'), proToken).send({ itemId: locked.id });
+  assert.equal(res.status, 402, 'причина — подписка, а не деньги');
+  assert.equal(res.body.error, 'Этот предмет доступен с подпиской PRO');
+
+  // XP не списан — покупка не состоялась.
+  const still = await auth(request(app).get('/api/store'), proToken);
+  assert.equal(still.body.xp, 1000, 'опыт не тронут при отказе');
+  assert.ok(!still.body.items.find((i) => i.id === locked.id).owned, 'предмет не куплен');
+});
+
+test('после оформления PRO тот же предмет перестаёт быть proOnly и покупается', async () => {
+  const before = await auth(request(app).get('/api/store'), proToken);
+  const locked = before.body.items.find((i) => i.proOnly && !i.owned);
+  assert.ok(locked, 'до апгрейда предмет недоступен без PRO');
+
+  const upgrade = await auth(request(app).post('/api/users/subscription/upgrade'), proToken);
+  assert.equal(upgrade.status, 200);
+  assert.equal(upgrade.body.user.subscription, 'pro');
+
+  const after = await auth(request(app).get('/api/store'), proToken);
+  const nowItem = after.body.items.find((i) => i.id === locked.id);
+  assert.equal(nowItem.proOnly, false, 'с PRO предмет больше не заблокирован');
+
+  const buy = await auth(request(app).post('/api/store/buy'), proToken).send({ itemId: locked.id });
+  assert.equal(buy.status, 200, 'теперь предмет можно купить');
+  assert.equal(buy.body.user.xp, before.body.xp - locked.price, 'списана настоящая цена');
 });
 
 /* ------------------------------------------------------------- diagnostics */
@@ -639,6 +707,80 @@ test('the parent PIN is stored hashed and verified correctly', async () => {
 test('a non-4-digit PIN is rejected', async () => {
   const res = await auth(request(app).post('/api/users/pin'), demoToken).send({ pin: 'abcd' });
   assert.equal(res.status, 400);
+});
+
+test('setting the first PIN needs no currentPin', async () => {
+  // Fresh account with no PIN yet: currentPin must not be required.
+  const reg = await request(app)
+    .post('/api/auth/register')
+    .send({ name: 'ПИН-первый', email: `pin-first-${Date.now()}@example.com`, password: 'password123' });
+  const token = reg.body.token;
+
+  const set = await auth(request(app).post('/api/users/pin'), token).send({ pin: '1234' });
+  assert.equal(set.status, 200, 'the first PIN is set without a current PIN');
+
+  const stored = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [reg.body.user.id]);
+  assert.ok(stored.parent_pin && stored.parent_pin.startsWith('$2'), 'stored as a bcrypt hash');
+});
+
+test('REGRESSION: changing a PIN requires the current one', async () => {
+  // The child could open Settings and overwrite the parent PIN outright; now a
+  // change must prove knowledge of the current PIN.
+  const reg = await request(app)
+    .post('/api/auth/register')
+    .send({ name: 'ПИН-смена', email: `pin-change-${Date.now()}@example.com`, password: 'password123' });
+  const token = reg.body.token;
+
+  const first = await auth(request(app).post('/api/users/pin'), token).send({ pin: '1234' });
+  assert.equal(first.status, 200);
+
+  // Without the current PIN — rejected.
+  const missing = await auth(request(app).post('/api/users/pin'), token).send({ pin: '5678' });
+  assert.equal(missing.status, 400, 'a change without the current PIN is refused');
+
+  // With the wrong current PIN — rejected, with the specific message.
+  const wrong = await auth(request(app).post('/api/users/pin'), token).send({ pin: '5678', currentPin: '0000' });
+  assert.equal(wrong.status, 400, 'a wrong current PIN is refused');
+  assert.equal(wrong.body.error, 'Неверный текущий PIN-код');
+
+  // With the correct current PIN — succeeds and actually replaces the hash.
+  const before = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [reg.body.user.id]);
+  const ok = await auth(request(app).post('/api/users/pin'), token).send({ pin: '5678', currentPin: '1234' });
+  assert.equal(ok.status, 200, 'the correct current PIN lets the change through');
+  const after = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [reg.body.user.id]);
+  assert.notEqual(after.parent_pin, before.parent_pin, 'the stored hash was replaced');
+
+  const verifiesNew = await auth(request(app).post('/api/users/pin/verify'), token).send({ pin: '5678' });
+  assert.equal(verifiesNew.status, 200, 'the new PIN verifies');
+});
+
+test('REGRESSION: removing a PIN requires the current one', async () => {
+  const reg = await request(app)
+    .post('/api/auth/register')
+    .send({ name: 'ПИН-удаление', email: `pin-delete-${Date.now()}@example.com`, password: 'password123' });
+  const token = reg.body.token;
+
+  const first = await auth(request(app).post('/api/users/pin'), token).send({ pin: '1234' });
+  assert.equal(first.status, 200);
+
+  // Without the current PIN in the query — rejected.
+  const missing = await auth(request(app).delete('/api/users/pin'), token);
+  assert.equal(missing.status, 400, 'deleting without the current PIN is refused');
+
+  // With the wrong current PIN — rejected, with the specific message.
+  const wrong = await auth(request(app).delete('/api/users/pin').query({ currentPin: '0000' }), token);
+  assert.equal(wrong.status, 400, 'a wrong current PIN is refused');
+  assert.equal(wrong.body.error, 'Неверный текущий PIN-код');
+
+  // Still set after the failed attempts.
+  const stillSet = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [reg.body.user.id]);
+  assert.ok(stillSet.parent_pin, 'the PIN survives failed deletions');
+
+  // With the correct current PIN — succeeds and clears the hash.
+  const ok = await auth(request(app).delete('/api/users/pin').query({ currentPin: '1234' }), token);
+  assert.equal(ok.status, 200, 'the correct current PIN removes the PIN');
+  const gone = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [reg.body.user.id]);
+  assert.equal(gone.parent_pin, null, 'the PIN is cleared');
 });
 
 /* ------------------------------------------------------------------- admin */

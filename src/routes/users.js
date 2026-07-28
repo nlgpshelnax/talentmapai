@@ -64,12 +64,23 @@ router.patch(
  * The parent PIN gates the analytics area from the child.
  * The prototype stored the four digits in plaintext and compared with `===`;
  * it is now a bcrypt hash like any other credential.
+ *
+ * Parent and child share one account, so once a PIN exists, changing it must
+ * require the current PIN — otherwise the child could simply overwrite it.
+ * `currentPin` is optional in the schema (it is only needed when a PIN already
+ * exists) and enforced in the handler.
  */
 router.post(
   '/pin',
   requireAuth,
-  validate(z.object({ pin: fields.pin })),
+  validate(z.object({ pin: fields.pin, currentPin: fields.pin.optional() })),
   asyncHandler(async (req, res) => {
+    const row = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [req.user.id]);
+    if (row?.parent_pin) {
+      if (!req.body.currentPin) throw ApiError.badRequest('Введите текущий PIN-код');
+      const ok = await bcrypt.compare(req.body.currentPin, row.parent_pin);
+      if (!ok) throw ApiError.badRequest('Неверный текущий PIN-код');
+    }
     await dbRun('UPDATE users SET parent_pin = ? WHERE id = ?', [
       await bcrypt.hash(req.body.pin, 10),
       req.user.id,
@@ -93,10 +104,19 @@ router.post(
   })
 );
 
+// Removing a PIN also requires the current one. A DELETE body is awkward for
+// clients, so the PIN comes in as a query parameter (?currentPin=1234), validated
+// with the same `validate(schema, 'query')` form used elsewhere (see admin edges).
 router.delete(
   '/pin',
   requireAuth,
+  validate(z.object({ currentPin: fields.pin }), 'query'),
   asyncHandler(async (req, res) => {
+    const row = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [req.user.id]);
+    if (row?.parent_pin) {
+      const ok = await bcrypt.compare(req.query.currentPin, row.parent_pin);
+      if (!ok) throw ApiError.badRequest('Неверный текущий PIN-код');
+    }
     await dbRun('UPDATE users SET parent_pin = NULL WHERE id = ?', [req.user.id]);
     res.json({ success: true });
   })

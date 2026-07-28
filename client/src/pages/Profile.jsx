@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
-import { MapPin, Cake, Star, Crown, History, Sparkles, TrendingUp } from 'lucide-react';
+import { MapPin, Cake, Star, Crown, History, Sparkles, TrendingUp, ChevronDown } from 'lucide-react';
 
 import { useAppState } from '../context/AppStateContext';
 import { useAuth } from '../context/AuthContext';
 import api, { errorMessage } from '../lib/api';
-import { constellationProgress } from '../lib/graph';
+import { constellationProgress, progressIn } from '../lib/graph';
+import { directions, skills, plural } from '../lib/plural';
 import Avatar, { UserName } from '../components/Avatar';
 import { Button, Alert, Badge, ProgressRing, Spinner, cx } from '../components/ui';
 
@@ -20,6 +21,7 @@ export default function Profile() {
   const { patchUser } = useAuth();
 
   const [historyLimit, setHistoryLimit] = useState(HISTORY_STEP);
+  const [showRest, setShowRest] = useState(false);
   const [subError, setSubError] = useState('');
   const [subBusy, setSubBusy] = useState(false);
   const busyRef = useRef(false);
@@ -34,20 +36,37 @@ export default function Profile() {
   }
 
   const user = state.user || {};
-  const totals = state.totals || { stars: 0, completed: 0 };
-  const completed = totals.completed ?? (state.completedStars?.length || 0);
-  const totalStars = totals.stars ?? (state.stars?.length || 0);
-  const percent = totalStars ? Math.round((completed / totalStars) * 100) : 0;
+
+  /**
+   * Прогресс считаем по программе ребёнка — направлениям, которые подобрала
+   * диагностика. Раньше знаменателем был весь каталог, поэтому в шапке карты
+   * висело 20%, а здесь 3%: два разных числа про один и тот же момент.
+   */
+  const programmeIds = user.recommendedGraphs?.length
+    ? user.recommendedGraphs
+    : (state.constellations || []).map((c) => c.id);
+  const { done: completed, total: totalStars, percent } = progressIn(
+    state.stars,
+    state.completedStars,
+    programmeIds
+  );
+  const catalogueTotal = state.totals?.stars ?? (state.stars?.length || 0);
 
   const isPro = user.subscription === 'pro';
 
   const logs = state.historyLogs || [];
   const visibleLogs = logs.slice(0, historyLimit);
 
-  // Показываем созвездия, где есть хотя бы одна звезда, с прогрессом.
-  const withStars = progress
-    .filter((c) => c.total > 0)
+  // Своя программа идёт первой и всегда видна; остальной каталог — под катом,
+  // иначе список из четырнадцати нулевых полосок выглядит как провал.
+  const programmeSet = new Set(programmeIds.map(Number));
+  const withStars = progress.filter((c) => c.total > 0);
+  const mine = withStars
+    .filter((c) => programmeSet.has(Number(c.id)))
     .sort((a, b) => b.percent - a.percent || b.done - a.done);
+  const rest = withStars
+    .filter((c) => !programmeSet.has(Number(c.id)))
+    .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name, 'ru'));
 
   async function handleSubscription(kind) {
     if (busyRef.current) return;
@@ -82,7 +101,7 @@ export default function Profile() {
             {user.age != null && (
               <span className="inline-flex items-center gap-1.5">
                 <Cake size={15} aria-hidden="true" />
-                {user.age} лет
+                {plural(user.age, `${user.age} год`, `${user.age} года`, `${user.age} лет`)}
               </span>
             )}
             {user.city && (
@@ -113,11 +132,19 @@ export default function Profile() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         {/* Круговой прогресс + XP */}
         <div className="glass flex flex-col items-center gap-4 rounded-3xl p-6">
-          <h2 className="self-start text-lg font-bold text-white">Прогресс по звёздам</h2>
-          <ProgressRing value={percent} sublabel="звёзд пройдено" />
-          <p className="text-sm text-slate-400">
+          <h2 className="self-start text-lg font-bold text-white">Прогресс по программе</h2>
+          <ProgressRing value={percent} sublabel="по твоим направлениям" />
+          <p className="text-center text-sm text-slate-400">
             Пройдено <span className="font-semibold text-gold-300">{completed}</span> из{' '}
-            <span className="font-semibold text-slate-200">{totalStars}</span> навыков
+            <span className="font-semibold text-slate-200">{skills(totalStars)}</span>
+            {catalogueTotal > totalStars && (
+              <>
+                <br />
+                <span className="text-xs text-slate-500">
+                  Всего в каталоге {skills(catalogueTotal)} — открой новые направления в разделе «Карта».
+                </span>
+              </>
+            )}
           </p>
           <div className="grid w-full grid-cols-2 gap-3 pt-2">
             <div className="rounded-2xl bg-space-800/60 p-4 text-center">
@@ -125,14 +152,14 @@ export default function Profile() {
                 <Star size={18} aria-hidden="true" />
                 <span className="font-display text-2xl font-extrabold">{user.xp ?? 0}</span>
               </div>
-              <p className="mt-1 text-xs text-slate-400">очков опыта</p>
+              <p className="mt-1 text-xs text-slate-400">{plural(user.xp ?? 0, 'очко опыта', 'очка опыта', 'очков опыта')}</p>
             </div>
             <div className="rounded-2xl bg-space-800/60 p-4 text-center">
               <div className="flex items-center justify-center gap-1.5 text-emerald-300">
                 <TrendingUp size={18} aria-hidden="true" />
                 <span className="font-display text-2xl font-extrabold">{completed}</span>
               </div>
-              <p className="mt-1 text-xs text-slate-400">навыков освоено</p>
+              <p className="mt-1 text-xs text-slate-400">{plural(completed, 'навык освоен', 'навыка освоено', 'навыков освоено')}</p>
             </div>
           </div>
         </div>
@@ -140,41 +167,43 @@ export default function Profile() {
         {/* Разбивка по созвездиям */}
         <div className="glass rounded-3xl p-6">
           <h2 className="mb-4 text-lg font-bold text-white">Прогресс по направлениям</h2>
-          {withStars.length === 0 ? (
+          {mine.length === 0 && rest.length === 0 ? (
             <p className="text-sm text-slate-400">Пока нет данных по направлениям.</p>
           ) : (
-            <ul className="space-y-4">
-              {withStars.map((c) => (
-                <li key={c.id}>
-                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                    <span className="flex min-w-0 items-center gap-2 text-slate-200">
-                      {c.icon && (
-                        <span aria-hidden="true" className="text-base">
-                          {c.icon}
-                        </span>
-                      )}
-                      <span className="truncate font-medium">{c.name}</span>
-                    </span>
-                    <span className="shrink-0 tabular-nums text-slate-400">
-                      {c.done}/{c.total}
-                    </span>
-                  </div>
-                  <div
-                    className="h-2 overflow-hidden rounded-full bg-white/8"
-                    role="progressbar"
-                    aria-valuenow={c.percent}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`${c.name}: ${c.percent}%`}
+            <>
+              {mine.length > 0 && (
+                <ul className="space-y-4">
+                  {mine.map((c) => (
+                    <DirectionBar key={c.id} c={c} />
+                  ))}
+                </ul>
+              )}
+
+              {rest.length > 0 && (
+                <div className={mine.length ? 'mt-5 border-t border-white/10 pt-5' : ''}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRest((v) => !v)}
+                    aria-expanded={showRest}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left text-sm text-slate-400 transition hover:text-slate-200"
                   >
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-all duration-700"
-                      style={{ width: `${c.percent}%` }}
+                    <span>Ещё {directions(rest.length)} в каталоге</span>
+                    <ChevronDown
+                      size={16}
+                      aria-hidden="true"
+                      className={cx('shrink-0 transition-transform', showRest && 'rotate-180')}
                     />
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </button>
+                  {showRest && (
+                    <ul className="mt-4 space-y-4">
+                      {rest.map((c) => (
+                        <DirectionBar key={c.id} c={c} muted />
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -255,5 +284,43 @@ export default function Profile() {
         )}
       </div>
     </section>
+  );
+}
+
+/* ------------------------------------------------------------- DirectionBar */
+
+function DirectionBar({ c, muted = false }) {
+  return (
+    <li>
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+        <span className={cx('flex min-w-0 items-center gap-2', muted ? 'text-slate-400' : 'text-slate-200')}>
+          {c.icon && (
+            <span aria-hidden="true" className="text-base">
+              {c.icon}
+            </span>
+          )}
+          <span className="truncate font-medium">{c.name}</span>
+        </span>
+        <span className="shrink-0 tabular-nums text-slate-400">
+          {c.done}/{c.total}
+        </span>
+      </div>
+      <div
+        className="h-2 overflow-hidden rounded-full bg-white/8"
+        role="progressbar"
+        aria-valuenow={c.percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${c.name}: ${c.percent}%`}
+      >
+        <div
+          className={cx(
+            'h-full rounded-full transition-all duration-700',
+            muted ? 'bg-slate-500/70' : 'bg-gradient-to-r from-gold-400 to-gold-500'
+          )}
+          style={{ width: `${c.percent}%` }}
+        />
+      </div>
+    </li>
   );
 }

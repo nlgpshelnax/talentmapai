@@ -263,6 +263,105 @@ async function main() {
   const vb = await page.locator('svg[role="application"]').first().getAttribute('viewBox');
   pass('viewBox подогнан под содержимое', vb);
 
+  // Раскладка кластеров. Жёсткая сетка 4×4 из базы оставляла подписи внахлёст
+  // и половину полотна пустой, когда открыто не 14 направлений, а два.
+  const layout = await page.evaluate(() => {
+    const svg = document.querySelector('svg[role="application"]');
+    if (!svg) return null;
+    const labels = [...svg.querySelectorAll('[data-constellation-label]')].map((el) => {
+      const b = el.getBoundingClientRect();
+      return { x: b.x, y: b.y, w: b.width, h: b.height, right: b.right, bottom: b.bottom };
+    });
+    let overlaps = 0;
+    for (let i = 0; i < labels.length; i++) {
+      for (let j = i + 1; j < labels.length; j++) {
+        const a = labels[i];
+        const b = labels[j];
+        if (a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom) overlaps++;
+      }
+    }
+    const box = svg.getBoundingClientRect();
+    const pts = [...svg.querySelectorAll('[data-star]')].map((el) => el.getBoundingClientRect());
+    const minX = Math.min(...pts.map((r) => r.x));
+    const maxX = Math.max(...pts.map((r) => r.right));
+    const minY = Math.min(...pts.map((r) => r.y));
+    const maxY = Math.max(...pts.map((r) => r.bottom));
+    return {
+      labels: labels.length,
+      overlaps,
+      fillX: box.width ? (maxX - minX) / box.width : 0,
+      fillY: box.height ? (maxY - minY) / box.height : 0,
+    };
+  });
+
+  if (!layout) {
+    fail('раскладка созвездий: карта не найдена');
+  } else {
+    layout.overlaps === 0
+      ? pass('подписи созвездий не накладываются друг на друга')
+      : fail(`подписи созвездий пересекаются: ${layout.overlaps}`);
+    layout.fillX > 0.45 && layout.fillY > 0.35
+      ? pass('созвездия заполняют полотно', `${Math.round(layout.fillX * 100)}% × ${Math.round(layout.fillY * 100)}%`)
+      : fail(
+          'созвездия занимают малую часть полотна',
+          `${Math.round(layout.fillX * 100)}% × ${Math.round(layout.fillY * 100)}%`
+        );
+  }
+
+  // Один и тот же прогресс во всех разделах: в шапке карты стояло 20%,
+  // а в профиле 3% — считали от разных знаменателей.
+  const mapProgress = ((await page.textContent('body')) || '').match(/(\d+)\s+из\s+(\d+)\s+навык\S*\s+·\s+(\d+)%/);
+  mapProgress ? pass('прогресс на карте показан', mapProgress[0]) : fail('прогресс на карте не найден');
+
+  // Переключение «Все созвездия» — это фильтр показа, прогресс меняться не должен.
+  const allToggle = page.getByRole('button', { name: /^Все\s*\(\d+\)$/ }).first();
+  if (await allToggle.count()) {
+    await allToggle.click();
+    await page.waitForTimeout(900);
+    const after = ((await page.textContent('body')) || '').match(/(\d+)\s+из\s+(\d+)\s+навык\S*\s+·\s+(\d+)%/);
+    await shot(page, 'map-all-constellations');
+    after && mapProgress && after[0] === mapProgress[0]
+      ? pass('переключение вида не меняет прогресс', after[0])
+      : fail('прогресс изменился при переключении вида', `${mapProgress?.[0]} → ${after?.[0]}`);
+
+    const overlapAll = await page.evaluate(() => {
+      const svg = document.querySelector('svg[role="application"]');
+      const labels = [...(svg?.querySelectorAll('[data-constellation-label]') || [])].map((el) =>
+        el.getBoundingClientRect()
+      );
+      let n = 0;
+      for (let i = 0; i < labels.length; i++)
+        for (let j = i + 1; j < labels.length; j++) {
+          const a = labels[i];
+          const b = labels[j];
+          if (a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom) n++;
+        }
+      return { count: labels.length, overlaps: n };
+    });
+    overlapAll.overlaps === 0
+      ? pass(`подписи не накладываются при показе всех созвездий (${overlapAll.count})`)
+      : fail(`наложений подписей при показе всех созвездий: ${overlapAll.overlaps}`);
+
+    // Полный каталог тоже должен занимать полотно, а не жаться в угол.
+    const fillAll = await page.evaluate(() => {
+      const svg = document.querySelector('svg[role="application"]');
+      const box = svg.getBoundingClientRect();
+      const pts = [...svg.querySelectorAll('[data-star]')].map((el) => el.getBoundingClientRect());
+      const minX = Math.min(...pts.map((r) => r.x));
+      const maxX = Math.max(...pts.map((r) => r.right));
+      const minY = Math.min(...pts.map((r) => r.y));
+      const maxY = Math.max(...pts.map((r) => r.bottom));
+      return { x: (maxX - minX) / box.width, y: (maxY - minY) / box.height };
+    });
+    fillAll.x > 0.6 && fillAll.y > 0.5
+      ? pass('все созвездия заполняют полотно', `${Math.round(fillAll.x * 100)}% × ${Math.round(fillAll.y * 100)}%`)
+      : fail('все созвездия занимают малую часть полотна', `${Math.round(fillAll.x * 100)}% × ${Math.round(fillAll.y * 100)}%`);
+
+    const back = page.getByRole('button', { name: /^Мои направления$/ }).first();
+    if (await back.count()) await back.click();
+    await page.waitForTimeout(700);
+  }
+
   // Hover tooltip.
   const firstStar = page.locator('svg [data-star]').first();
   await firstStar.hover();
@@ -399,6 +498,33 @@ async function main() {
     pass('покупка недоступна (не хватает XP) — это корректное поведение');
   }
 
+  // Витрина не должна обещать недостижимое: на пробном плане потолок опыта
+  // ниже цены дорогих наград, и кнопка «Ещё 100 XP» была ложью.
+  await page.goto(`${BASE}/app/store`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  const storeState = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('[data-store-item]')];
+    return cards.map((el) => ({
+      pro: /Доступно с PRO/i.test(el.textContent || ''),
+      needs: /Ещё\s+\d+\s*XP/i.test(el.textContent || ''),
+      disabled: !!el.querySelector('button[disabled]'),
+    }));
+  });
+  if (!storeState.length) {
+    pass('карточки магазина без data-атрибута — проверка по тексту');
+    const txt = (await page.textContent('body')) || '';
+    /Доступно с PRO/i.test(txt)
+      ? pass('дорогие награды помечены «Доступно с PRO»')
+      : fail('нет пометки PRO на недостижимых наградах');
+  } else {
+    const proCards = storeState.filter((c) => c.pro);
+    proCards.length > 0 ? pass(`наград под PRO: ${proCards.length}`) : fail('нет наград, помеченных PRO');
+    proCards.every((c) => c.disabled && !c.needs)
+      ? pass('PRO-награды не обещают «Ещё N XP»')
+      : fail('PRO-награда всё ещё предлагает докопить опыт');
+  }
+  await shot(page, 'store-pro-gating');
+
   /* -------------------------------------------------------------- profile */
   console.log('\nПрофиль');
   await page.goto(`${BASE}/app/profile`, { waitUntil: 'networkidle' });
@@ -420,12 +546,86 @@ async function main() {
   /парол/i.test(settingsText || '') ? pass('смена пароля присутствует') : fail('смена пароля отсутствует');
   /PIN/i.test(settingsText || '') ? pass('настройка PIN присутствует') : fail('настройка PIN отсутствует');
 
+  // Выпадающий список городов раскрывался сам при открытии страницы —
+  // подсказка перекрывала форму, хотя пользователь ничего не набирал.
+  const cityListOnLoad = await page.locator('[role="listbox"]').count();
+  cityListOnLoad === 0
+    ? pass('список городов не раскрывается сам при открытии')
+    : fail('список городов раскрыт без ввода');
+
+  // Роль меняется в настройках: раньше ошибку выбора на онбординге
+  // исправить было нельзя вообще.
+  const roleControl = page.getByRole('radiogroup', { name: /кто проходит диагностику/i }).first();
+  (await roleControl.count()) > 0
+    ? pass('роль можно изменить в настройках')
+    : fail('в настройках нет смены роли');
+
+  // Единый тон: раздел обращается на «вы», а не мешает «ты» и «вы» в одном экране.
+  const informal = (settingsText || '').match(/\b(Обнови|Задай|Введи|Укажи|Выбери|Загрузи|Смени)\b/g) || [];
+  informal.length === 0
+    ? pass('настройки обращаются на «вы» без смешения тона')
+    : fail('в настройках смешан тон', informal.join(', '));
+
+  // Смена PIN требует текущий: иначе ребёнок мог переустановить родительский код.
+  const pinChange = page.getByRole('button', { name: /изменить pin|сменить pin/i }).first();
+  if (await pinChange.count()) {
+    await pinChange.click();
+    await page.waitForTimeout(400);
+    const t = (await page.textContent('body')) || '';
+    /Текущий PIN/i.test(t) ? pass('смена PIN спрашивает текущий код') : fail('смена PIN не требует текущий код');
+    await shot(page, 'settings-pin-change');
+  } else {
+    pass('PIN ещё не задан — форма первичной установки');
+  }
+
   /* --------------------------------------------------------------- parent */
   console.log('\nРодительский раздел');
   await page.goto(`${BASE}/app/parent`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1000);
   await shot(page, 'parent-dashboard');
   pass('родительский раздел открывается');
+
+  const parentText = (await page.textContent('body')) || '';
+
+  // Раздел был точной копией профиля ребёнка. Родителю нужны другие вещи:
+  // чей это отчёт, темп занятий, давность и что делать дальше.
+  const parentOnly = [
+    [/Отчёт по ребёнку/i, 'указано, чей это отчёт'],
+    [/за 30 дней/i, 'показан темп занятий'],
+    [/последнее занятие/i, 'показана давность активности'],
+    [/Сейчас в работе/i, 'показан текущий шаг ребёнка'],
+    [/заработано за всё время/i, 'показан заработанный опыт, а не остаток'],
+  ];
+  for (const [re, label] of parentOnly) {
+    re.test(parentText) ? pass(`родительский раздел: ${label}`) : fail(`родительский раздел: нет — ${label}`);
+  }
+
+  // Прогресс должен совпадать с тем, что видит ребёнок.
+  const parentProgress = parentText.match(/Освоено\s+(\d+)\s+из\s+(\d+)/);
+  await page.goto(`${BASE}/app`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  const mapNow = ((await page.textContent('body')) || '').match(/(\d+)\s+из\s+(\d+)\s+навык/);
+  await page.goto(`${BASE}/app/profile`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  const profileNow = ((await page.textContent('body')) || '').match(/Пройдено\s+(\d+)\s+из\s+(\d+)/);
+
+  if (parentProgress && mapNow && profileNow) {
+    const same =
+      parentProgress[1] === mapNow[1] &&
+      parentProgress[2] === mapNow[2] &&
+      profileNow[1] === mapNow[1] &&
+      profileNow[2] === mapNow[2];
+    same
+      ? pass('карта, профиль и родитель показывают один прогресс', `${mapNow[1]}/${mapNow[2]}`)
+      : fail(
+          'прогресс расходится между разделами',
+          `карта ${mapNow[1]}/${mapNow[2]} · профиль ${profileNow[1]}/${profileNow[2]} · родитель ${parentProgress[1]}/${parentProgress[2]}`
+        );
+  } else {
+    fail('не удалось сравнить прогресс между разделами');
+  }
+  await page.goto(`${BASE}/app/parent`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
 
   /* ---------------------------------------------------------------- share */
   console.log('\nПоделиться');

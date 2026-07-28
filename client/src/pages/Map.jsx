@@ -14,7 +14,15 @@ import {
 
 import { useAppState } from '../context/AppStateContext';
 import { useAuth } from '../context/AuthContext';
-import { boundsOf, computeAvailability, starState, STAR_STATE } from '../lib/graph';
+import {
+  boundsOf,
+  computeAvailability,
+  layoutConstellations,
+  progressIn,
+  starState,
+  STAR_STATE,
+} from '../lib/graph';
+import { skills } from '../lib/plural';
 import { errorMessage } from '../lib/api';
 import { Alert, Badge, Button, Modal, Spinner, cx } from '../components/ui';
 import PaywallModal from '../components/PaywallModal';
@@ -96,6 +104,16 @@ export default function MapPage() {
   }, [showAll, recommendedIds, constellations]);
 
   const unlockedSet = useMemo(() => new Set(visibleConstellationIds), [visibleConstellationIds]);
+
+  /**
+   * Программа ребёнка — то, что ему подобрала диагностика. В отличие от
+   * `visibleConstellationIds` она не зависит от переключателя «Мои направления /
+   * Все»: это фильтр отображения, и прогресс от него меняться не должен.
+   */
+  const programmeIds = useMemo(
+    () => (recommendedIds.length ? recommendedIds : constellations.map((c) => c.id)),
+    [recommendedIds, constellations]
+  );
   const currentStarId = state?.currentStarId ?? null;
 
   /**
@@ -117,7 +135,21 @@ export default function MapPage() {
     () => (focusedId ? new Set([focusedId]) : unlockedSet),
     [focusedId, unlockedSet]
   );
-  const visibleStars = useMemo(() => stars.filter((s) => visibleSet.has(s.constellationId)), [stars, visibleSet]);
+
+  /**
+   * Раскладка считается под текущий набор, а не берётся из базы. В базе центры
+   * созвездий стоят на сетке 4×4 сразу под все четырнадцать направлений, и при
+   * четырёх открытых на экране оставались те ячейки, которые им случайно
+   * достались: кластеры жались к одному краю, половина полотна пустовала.
+   */
+  const laid = useMemo(() => {
+    const shown = constellations.filter((c) => visibleSet.has(c.id));
+    const shownStars = stars.filter((s) => visibleSet.has(s.constellationId));
+    return layoutConstellations(shown, shownStars, box.w / Math.max(box.h, 1));
+  }, [constellations, stars, visibleSet, box]);
+
+  const visibleStars = laid.stars;
+  const laidConstellations = laid.constellations;
 
   const completedSet = useMemo(() => new Set(completedStars.map(Number)), [completedStars]);
   const available = useMemo(
@@ -130,25 +162,56 @@ export default function MapPage() {
     [constellations, unlockedSet]
   );
 
-  const starsById = useMemo(() => new Map(stars.map((s) => [s.id, s])), [stars]);
-  const constellationsById = useMemo(() => new Map(constellations.map((c) => [c.id, c])), [constellations]);
+  // Позиции — из пересчитанной раскладки, иначе связи и подписи уедут.
+  const starsById = useMemo(() => new Map(visibleStars.map((s) => [s.id, s])), [visibleStars]);
+  const constellationsById = useMemo(
+    () => new Map(laidConstellations.map((c) => [c.id, c])),
+    [laidConstellations]
+  );
 
   /**
    * Auto-fit to the content, then expand the short side so the viewBox aspect
    * matches the container. Without this the browser letterboxes a wide viewBox
    * inside a tall phone screen and the whole map collapses into a thin strip.
+   *
+   * Легенда лежит поверх полотна, поэтому нижний ряд созвездий уезжал под неё.
+   * Резервируем эту полосу прямо в viewBox; на узком экране легенда переносится
+   * на две строки и занимает больше места.
    */
   const base = useMemo(() => {
-    const b = boundsOf(visibleStars);
+    const overlayBottomPx = isNarrow ? 84 : 56;
+    const overlayTopPx = 8;
+
+    // Поля привязаны к радиусу кластера. Когда рядов несколько, вертикальный
+    // отступ нужен такой же, как горизонтальный; в один ряд он только раздувает
+    // пустоту, поэтому там он вдвое меньше.
+    const r = laid.radius || 0;
+    const tight = (laid.rows || 1) <= 1;
+    const b = boundsOf(
+      visibleStars,
+      r ? { x: r * 0.85, top: r * (tight ? 0.6 : 1.15), bottom: r * (tight ? 0.4 : 0.85) } : undefined
+    );
     const target = box.w / Math.max(box.h, 1);
     const current = b.width / Math.max(b.height, 1);
-    if (current < target) {
-      const width = b.height * target;
-      return { ...b, x: b.x - (width - b.width) / 2, width };
-    }
-    const height = b.width / target;
-    return { ...b, y: b.y - (height - b.height) / 2, height };
-  }, [visibleStars, box]);
+
+    const fitted =
+      current < target
+        ? (() => {
+            const width = b.height * target;
+            return { ...b, x: b.x - (width - b.width) / 2, width };
+          })()
+        : (() => {
+            const height = b.width / target;
+            return { ...b, y: b.y - (height - b.height) / 2, height };
+          })();
+
+    // Мировые единицы на пиксель считаем по уже подогнанной ширине, затем
+    // расширяем рамку на высоту накладок — содержимое сдвигается внутрь.
+    const perPx = fitted.width / Math.max(box.w, 1);
+    const top = overlayTopPx * perPx;
+    const bottom = overlayBottomPx * perPx;
+    return { ...fitted, y: fitted.y - top, height: fitted.height + top + bottom };
+  }, [visibleStars, laid.radius, laid.rows, box, isNarrow]);
 
   const viewBox = useMemo(() => {
     const w = base.width / zoom;
@@ -255,9 +318,10 @@ export default function MapPage() {
   if (error && !state) return <Alert tone="error">{error}</Alert>;
   if (!state) return null;
 
-  const total = visibleStars.length;
-  const done = visibleStars.filter((s) => completedSet.has(s.id)).length;
-  const percent = total ? Math.round((done / total) * 100) : 0;
+  // Считаем по открытым направлениям, а не по показанным: переключение
+  // «Мои направления / Все» — это фильтр отображения, и от него прогресс
+  // ребёнка меняться не должен.
+  const { done, total, percent } = progressIn(stars, completedStars, programmeIds);
 
   return (
     <div className="space-y-4">
@@ -267,7 +331,7 @@ export default function MapPage() {
           <div>
             <p className="text-sm text-slate-400">Прогресс по открытым созвездиям</p>
             <p className="font-display text-lg font-bold text-white">
-              {done} из {total} · {percent}%
+              {done} из {skills(total)} · {percent}%
             </p>
           </div>
         </div>
@@ -388,13 +452,12 @@ export default function MapPage() {
               Названия обрезаются под ширину ячейки: в режиме «все созвездия»
               на экран помещается 14 кластеров, и полные подписи наезжали друг
               на друга, превращая карту в кашу. */}
-          {constellations
-            .filter((c) => visibleSet.has(c.id))
-            .map((c) => {
+          {laidConstellations.map((c) => {
               // Сколько места по горизонтали остаётся подписи на экране.
-              // Ячейка сетки — 620 мировых единиц; делим на масштаб и оставляем
-              // зазор, чтобы соседние подписи не соприкасались.
-              const availablePx = (620 / unit) * 0.9;
+              // Ширину ячейки берём из текущей раскладки: она зависит от размера
+              // кластера, а не от константы, иначе при плотной сетке подписи
+              // рассчитываются на несуществующий запас и наезжают друг на друга.
+              const availablePx = ((laid.cellW || 620) / unit) * 0.88;
               const fontPx = 16;
               const charPx = fontPx * 0.62; // ширина символа Montserrat Bold
               const maxChars = Math.floor(availablePx / charPx);
@@ -413,6 +476,7 @@ export default function MapPage() {
                 <text
                   key={`c-${c.id}`}
                   aria-hidden="true"
+                  data-constellation-label={c.name}
                   x={c.x}
                   // Отступ считается в мировых координатах: он должен
                   // отталкиваться от радиуса кластера (±150), а не от
@@ -468,7 +532,11 @@ export default function MapPage() {
             const r = style.r * unit;
             // Названия видны сразу у пройденных и текущей звезды, у остальных —
             // при наведении: так карта читается с первого взгляда, но не пестрит.
-            const showLabel = isCurrent || st === STAR_STATE.COMPLETED;
+            // На узком экране подписываем только текущий шаг: две соседние
+            // подписи там налезают друг на друга и на саму звезду.
+            const showLabel = isNarrow
+              ? isCurrent
+              : (isCurrent || st === STAR_STATE.COMPLETED) && laidConstellations.length <= 3;
             const maxLabel = isNarrow ? 17 : 26;
             const shortName =
               star.name.length > maxLabel ? `${star.name.slice(0, maxLabel - 1)}…` : star.name;

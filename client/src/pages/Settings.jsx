@@ -48,7 +48,9 @@ function ProfileCard() {
 
   // key завязан на значимые поля пользователя: начальное состояние формы всегда
   // синхронно с сервером, без эффекта-инициализации (баг устаревших полей).
-  const sig = user ? `${user.id}|${user.name}|${user.age}|${user.city}|${user.weeklyHours}` : 'none';
+  const sig = user
+    ? `${user.id}|${user.name}|${user.age}|${user.city}|${user.weeklyHours}|${user.role}`
+    : 'none';
 
   return (
     <Card
@@ -93,6 +95,7 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(user?.age != null ? String(user.age) : '');
   const [city, setCity] = useState(user?.city || '');
+  const [role, setRole] = useState(user?.role === 'child' ? 'child' : 'parent');
   const [weeklyHours, setWeeklyHours] = useState(
     WEEKLY_HOURS.includes(user?.weeklyHours) ? user.weeklyHours : WEEKLY_HOURS[1]
   );
@@ -105,17 +108,21 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const cityBoxRef = useRef(null);
-  const suppressFetch = useRef(false);
+  // Автокомплит запускается только после реального ввода. Поле предзаполняется из
+  // профиля, а форма пересоздаётся по key при смене state.user — поэтому «печатал
+  // ли пользователь» хранится в ref: он инициализируется false при каждом монтаже
+  // и становится true лишь в обработчике onChange города. Без ввода lookup вообще
+  // не выполняется, а не просто прячется.
+  const cityTyped = useRef(false);
 
   // Дебаунс-автокомплит городов. Все setState происходят только внутри
   // асинхронного колбэка таймера — в теле эффекта состояние не меняется.
   useEffect(() => {
-    const query = city.trim();
-    if (suppressFetch.current) {
-      suppressFetch.current = false;
-      return undefined;
-    }
+    // До первого ввода подсказки не запрашиваем: иначе предзаполненный город
+    // открыл бы выпадающий список сам по себе сразу после загрузки.
+    if (!cityTyped.current) return undefined;
 
+    const query = city.trim();
     let cancelled = false;
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -157,7 +164,9 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
   }, []);
 
   const pickCity = useCallback((value) => {
-    suppressFetch.current = true;
+    // Выбор из списка — не «ввод»: сбрасываем флаг, чтобы обновление города не
+    // открыло выпадающий список заново.
+    cityTyped.current = false;
     setCity(value);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -202,7 +211,7 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
     }
 
     // Отправляем только заполненные поля; идентичность сервер берёт из токена.
-    const body = { name: trimmedName, weeklyHours };
+    const body = { name: trimmedName, weeklyHours, role };
     if (ageNum !== undefined) body.age = ageNum;
     if (trimmedCity) body.city = trimmedCity;
 
@@ -273,6 +282,7 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
                   value={city}
                   onChange={(e) => {
                     onDirty();
+                    cityTyped.current = true;
                     setCity(e.target.value);
                   }}
                   onKeyDown={onCityKeyDown}
@@ -339,6 +349,20 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
           </Select>
         </Field>
 
+        <Field
+          label="Кто проходит диагностику"
+          hint="От выбора зависят формулировки вопросов. Поменять можно в любой момент."
+        >
+          <RoleSegmented
+            value={role}
+            disabled={saving}
+            onChange={(next) => {
+              onDirty();
+              setRole(next);
+            }}
+          />
+        </Field>
+
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>
             <Save size={18} aria-hidden="true" />
@@ -346,6 +370,48 @@ function ProfileForm({ user, onSaved, onError, onDirty }) {
           </Button>
         </div>
     </form>
+  );
+}
+
+/* ---------------------------------------------------------- RoleSegmented */
+
+const ROLE_OPTIONS = [
+  { value: 'parent', label: 'Родитель' },
+  { value: 'child', label: 'Подросток' },
+];
+
+/** Двухпозиционный переключатель роли в стиле приложения (radiogroup). */
+function RoleSegmented({ value, onChange, disabled }) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Кто проходит диагностику"
+      className="inline-flex w-full max-w-sm rounded-xl border border-white/12 bg-space-800/70 p-1"
+    >
+      {ROLE_OPTIONS.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            onClick={() => onChange(opt.value)}
+            className={cx(
+              'flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/40',
+              'disabled:cursor-not-allowed disabled:opacity-60',
+              active
+                ? 'bg-gradient-to-r from-gold-400 to-gold-500 text-space-950 shadow-lg shadow-gold-500/20'
+                : 'text-slate-300 hover:text-white'
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -394,7 +460,7 @@ function PasswordCard() {
   }
 
   return (
-    <Card icon={<Lock size={20} aria-hidden="true" />} title="Смена пароля" description="Обнови пароль для входа в аккаунт.">
+    <Card icon={<Lock size={20} aria-hidden="true" />} title="Смена пароля" description="Обновите пароль для входа в аккаунт.">
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {okMsg && <Alert tone="success">{okMsg}</Alert>}
         {errMsg && <Alert tone="error">{errMsg}</Alert>}
@@ -456,21 +522,47 @@ function PasswordCard() {
 
 /* ------------------------------------------------------------------ PinCard */
 
+// Ввод для четырёхзначного PIN — общий вид для всех полей карточки.
+function PinInput({ id, label, value, onChange, disabled }) {
+  return (
+    <Field label={label} htmlFor={id} hint="4 цифры" required>
+      <Input
+        id={id}
+        type="password"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={4}
+        pattern="\d{4}"
+        placeholder="••••"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 4))}
+        disabled={disabled}
+        className="max-w-[10rem] tracking-[0.5em]"
+        required
+      />
+    </Field>
+  );
+}
+
 function PinCard({ hasPin }) {
   const { refresh } = useAppState();
 
-  const [mode, setMode] = useState(null); // null | 'set' | 'change'
-  const [pin, setPin] = useState('');
+  const [mode, setMode] = useState(null); // null | 'set' | 'change' | 'remove'
+  const [pin, setPin] = useState(''); // новый PIN (для set/change)
+  const [currentPin, setCurrentPin] = useState(''); // текущий PIN (для change/remove)
   const [busy, setBusy] = useState(false);
   const [okMsg, setOkMsg] = useState('');
   const [errMsg, setErrMsg] = useState('');
   const busyRef = useRef(false);
 
   const editing = mode !== null;
+  // Текущий PIN нужен, когда он уже установлен: и при смене, и при удалении.
+  const needsCurrent = mode === 'change' || mode === 'remove';
 
   function startEditing(nextMode) {
     setMode(nextMode);
     setPin('');
+    setCurrentPin('');
     setOkMsg('');
     setErrMsg('');
   }
@@ -478,46 +570,51 @@ function PinCard({ hasPin }) {
   function cancelEditing() {
     setMode(null);
     setPin('');
+    setCurrentPin('');
     setErrMsg('');
   }
 
-  async function savePin(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (busyRef.current) return;
     setOkMsg('');
     setErrMsg('');
-    if (!/^\d{4}$/.test(pin)) {
+
+    // Для смены и удаления сначала проверяем текущий PIN на форму — сервер всё
+    // равно перепроверит, но так пользователь видит ошибку сразу.
+    if (needsCurrent && !/^\d{4}$/.test(currentPin)) {
+      setErrMsg('Введите текущий PIN-код — 4 цифры.');
+      return;
+    }
+    if (mode !== 'remove' && !/^\d{4}$/.test(pin)) {
       setErrMsg('PIN-код должен состоять из 4 цифр.');
       return;
     }
-    busyRef.current = true;
-    setBusy(true);
-    try {
-      await api.post('/users/pin', { pin });
-      await refresh();
-      setMode(null);
-      setPin('');
-      setOkMsg('PIN-код сохранён.');
-    } catch (err) {
-      setErrMsg(errorMessage(err, 'Не удалось сохранить PIN-код.'));
-    } finally {
-      busyRef.current = false;
-      setBusy(false);
-    }
-  }
 
-  async function removePin() {
-    if (busyRef.current) return;
-    setOkMsg('');
-    setErrMsg('');
     busyRef.current = true;
     setBusy(true);
     try {
-      await api.delete('/users/pin');
-      await refresh();
-      setOkMsg('PIN-код удалён.');
+      if (mode === 'remove') {
+        // DELETE-тело неудобно клиентам: текущий PIN уходит query-параметром.
+        await api.delete('/users/pin', { params: { currentPin } });
+        await refresh();
+        setMode(null);
+        setCurrentPin('');
+        setOkMsg('PIN-код удалён.');
+      } else {
+        const body = { pin };
+        if (mode === 'change') body.currentPin = currentPin;
+        await api.post('/users/pin', body);
+        await refresh();
+        setMode(null);
+        setPin('');
+        setCurrentPin('');
+        setOkMsg('PIN-код сохранён.');
+      }
     } catch (err) {
-      setErrMsg(errorMessage(err, 'Не удалось удалить PIN-код.'));
+      setErrMsg(
+        errorMessage(err, mode === 'remove' ? 'Не удалось удалить PIN-код.' : 'Не удалось сохранить PIN-код.')
+      );
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -545,7 +642,7 @@ function PinCard({ hasPin }) {
                   <Button type="button" variant="secondary" onClick={() => startEditing('change')} disabled={busy}>
                     Изменить PIN
                   </Button>
-                  <Button type="button" variant="danger" onClick={removePin} loading={busy}>
+                  <Button type="button" variant="danger" onClick={() => startEditing('remove')} disabled={busy}>
                     <Trash2 size={16} aria-hidden="true" />
                     Удалить PIN
                   </Button>
@@ -559,32 +656,45 @@ function PinCard({ hasPin }) {
             </div>
           </div>
         ) : (
-          <form onSubmit={savePin} noValidate className="space-y-4">
-            <Field label={mode === 'change' ? 'Новый PIN-код' : 'PIN-код'} htmlFor="pin-input" hint="4 цифры" required>
-              <Input
-                id="pin-input"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={4}
-                pattern="\d{4}"
-                placeholder="••••"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {mode === 'remove' && (
+              <p className="text-sm text-slate-300">
+                Чтобы снять защиту, введите текущий PIN-код.
+              </p>
+            )}
+            {needsCurrent && (
+              <PinInput
+                id="pin-current"
+                label="Текущий PIN-код"
+                value={currentPin}
+                onChange={setCurrentPin}
                 disabled={busy}
-                className="max-w-[10rem] tracking-[0.5em]"
-                data-autofocus
-                required
               />
-            </Field>
+            )}
+            {mode !== 'remove' && (
+              <PinInput
+                id="pin-input"
+                label={mode === 'change' ? 'Новый PIN-код' : 'PIN-код'}
+                value={pin}
+                onChange={setPin}
+                disabled={busy}
+              />
+            )}
             <div className="flex justify-end gap-3">
               <Button type="button" variant="ghost" onClick={cancelEditing} disabled={busy}>
                 Отмена
               </Button>
-              <Button type="submit" loading={busy}>
-                <Save size={18} aria-hidden="true" />
-                Сохранить
-              </Button>
+              {mode === 'remove' ? (
+                <Button type="submit" variant="danger" loading={busy}>
+                  <Trash2 size={16} aria-hidden="true" />
+                  Удалить PIN
+                </Button>
+              ) : (
+                <Button type="submit" loading={busy}>
+                  <Save size={18} aria-hidden="true" />
+                  Сохранить
+                </Button>
+              )}
             </div>
           </form>
         )}

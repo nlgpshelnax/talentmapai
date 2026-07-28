@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ShoppingBag, Star, Check, Sparkles, RefreshCw } from 'lucide-react';
+import { ShoppingBag, Star, Check, Sparkles, RefreshCw, Crown } from 'lucide-react';
 
 import { useAppState } from '../context/AppStateContext';
 import { useAuth } from '../context/AuthContext';
 import api, { errorMessage } from '../lib/api';
 import Avatar, { UserName } from '../components/Avatar';
 import { Button, Alert, Badge, Spinner, EmptyState, cx } from '../components/ui';
+import { skills, points } from '../lib/plural';
 
 const GROUPS = [
   { type: 'avatar', title: 'Аватары' },
@@ -116,6 +117,15 @@ export default function Store() {
   const equipped = store?.equipped || {};
   const items = store?.items || [];
 
+  // Экономика бесплатного плана, честно и из данных: потолок XP — это самая
+  // дорогая вещь, которая ещё НЕ помечена proOnly (всё, что дороже, недостижимо
+  // без подписки). Число бесплатных навыков выводим из потолка, а не хардкодим.
+  const proOnlyItems = items.filter((i) => i.proOnly);
+  const reachablePrices = items.filter((i) => !i.proOnly).map((i) => i.price);
+  const trialCeiling = reachablePrices.length ? Math.max(...reachablePrices) : 0;
+  const freeSkills = XP_PER_STAR ? Math.round(trialCeiling / XP_PER_STAR) : 0;
+  const showEconomyNote = proOnlyItems.length > 0 && trialCeiling > 0;
+
   // Превью строим из текущего пользователя, но подменяем экипировку данными магазина,
   // чтобы отражать самое свежее состояние сразу после покупки/примерки.
   const previewUser = { ...(user || {}), equipped };
@@ -132,6 +142,16 @@ export default function Store() {
             Трать опыт на аватары, рамки и звания. Каждый пройденный навык приносит{' '}
             <span className="font-semibold text-gold-300">{XP_PER_STAR} XP</span>.
           </p>
+          {showEconomyNote && (
+            <p className="mt-1.5 flex max-w-lg items-start gap-1.5 text-xs text-slate-500">
+              <Crown size={14} className="mt-0.5 shrink-0 text-gold-400" aria-hidden="true" />
+              <span>
+                На бесплатном плане можно освоить {skills(freeSkills)} — это до{' '}
+                <span className="font-semibold text-slate-300">{points(trialCeiling)}</span> опыта.
+                Вещи дороже открываются с подпиской PRO.
+              </span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2 self-start rounded-2xl bg-space-800/70 px-4 py-2.5">
           <Star size={20} className="text-gold-300" aria-hidden="true" />
@@ -200,6 +220,7 @@ function StoreCard({ item, xp, equipped, busy, anyBusy, onBuy, onEquip }) {
 
   return (
     <li
+      data-store-item={item.code}
       className={cx(
         'glass flex flex-col rounded-2xl p-5 transition',
         equipped ? 'border-gold-400/50 shadow-glow-soft' : 'hover:border-white/20'
@@ -222,6 +243,12 @@ function StoreCard({ item, xp, equipped, busy, anyBusy, onBuy, onEquip }) {
               Надето
             </Badge>
           )}
+          {!item.owned && item.proOnly && (
+            <Badge tone="gold">
+              <Crown size={12} aria-hidden="true" />
+              PRO
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -235,6 +262,8 @@ function StoreCard({ item, xp, equipped, busy, anyBusy, onBuy, onEquip }) {
         </span>
 
         {item.owned ? (
+          // Куплено раньше — оставляем управляемым, даже если сейчас предмет
+          // помечен proOnly (например, после отмены подписки).
           <Button
             type="button"
             size="sm"
@@ -244,6 +273,20 @@ function StoreCard({ item, xp, equipped, busy, anyBusy, onBuy, onEquip }) {
             disabled={anyBusy && !busy}
           >
             {equipped ? 'Снять' : 'Надеть'}
+          </Button>
+        ) : item.proOnly ? (
+          // Недостижимо на бесплатном плане: вместо обманчивого «Ещё N XP»
+          // показываем честное состояние «доступно с PRO».
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled
+            title="Доступно с подпиской PRO"
+            aria-label={`«${item.title}» доступно с подпиской PRO`}
+          >
+            <Crown size={14} aria-hidden="true" />
+            Доступно с PRO
           </Button>
         ) : item.affordable ? (
           <Button type="button" size="sm" onClick={onBuy} loading={busy} disabled={anyBusy && !busy}>

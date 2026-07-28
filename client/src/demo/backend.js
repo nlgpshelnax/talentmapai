@@ -15,6 +15,15 @@ import { computeAvailability, currentStarId } from '../lib/graph';
 const XP_PER_STAR = 50;
 const TRIAL_LIMIT = 3;
 
+/**
+ * Mirrors the server: a cosmetic is "pro only" when its price exceeds the total
+ * XP a trial account can ever earn (TRIAL_LIMIT × XP_PER_STAR = 150). The demo
+ * user carries `subscription`, not `subscription_status`.
+ */
+function isProOnly(user, item) {
+  return user.subscription !== 'pro' && item.price > TRIAL_LIMIT * XP_PER_STAR;
+}
+
 class HttpError extends Error {
   constructor(status, message, details) {
     super(message);
@@ -99,6 +108,20 @@ function logFor(userId, text) {
 
 function progressOf(userId) {
   return getState().progress.filter((p) => p.userId === userId).map((p) => p.starId);
+}
+
+/** Темп занятий: сколько шагов закрыто за неделю/месяц и когда была активность. */
+function pace(userId) {
+  const logs = getState().logs.filter((l) => l.userId === userId);
+  const now = Date.now();
+  const at = (l) => Date.parse(l.createdAt);
+  const steps = logs.filter((l) => /шаг/i.test(l.text || '')).map(at).filter(Number.isFinite);
+  const times = logs.map(at).filter(Number.isFinite);
+  const within = (days) => steps.filter((t) => t >= now - days * 86400000).length;
+  return {
+    pace: { month: within(30), week: within(7) },
+    daysSinceActivity: times.length ? Math.max(0, Math.floor((now - Math.max(...times)) / 86400000)) : null,
+  };
 }
 
 function logsOf(userId) {
@@ -237,16 +260,25 @@ const routes = [
   }],
 
   ['GET', /^\/app-state\/summary$/, (ctx) => {
+    // Темп занятий считаем здесь, а не в компоненте: обращение к часам во
+    // время рендера — нечистая операция, React 19 её запрещает.
     const user = requireUser(ctx);
     const g = graph();
-    const completed = progressOf(user.id).length;
+    const unlocked = visibleFor(user, g.constellations);
+    const scope = new Set(g.stars.filter((s) => unlocked.includes(s.constellationId)).map((s) => s.id));
+    const completedAll = progressOf(user.id);
+    const completed = completedAll.filter((id) => scope.has(id)).length;
+
     return {
       data: {
         completed,
-        total: g.stars.length,
+        total: scope.size,
+        percent: scope.size ? Math.round((completed / scope.size) * 100) : 0,
         works: getState().portfolio.filter((w) => w.userId === user.id).length,
         xp: user.xp,
-        percent: g.stars.length ? Math.round((completed / g.stars.length) * 100) : 0,
+        xpEarned: completedAll.length * XP_PER_STAR,
+        catalogueTotal: g.stars.length,
+        ...pace(user.id),
       },
     };
   }],
@@ -461,7 +493,12 @@ const routes = [
       data: {
         xp: user.xp,
         equipped: user.equipped,
-        items: snapshot.storeItems.map((i) => ({ ...i, owned: owned.has(i.id), affordable: user.xp >= i.price })),
+        items: snapshot.storeItems.map((i) => ({
+          ...i,
+          owned: owned.has(i.id),
+          affordable: user.xp >= i.price,
+          proOnly: isProOnly(user, i),
+        })),
       },
     };
   }],
@@ -475,6 +512,8 @@ const routes = [
     if (s.purchases.some((p) => p.userId === user.id && p.itemId === item.id)) {
       throw new HttpError(409, 'Этот предмет уже куплен');
     }
+    // PRO gate before the funds check — the trial user gets the accurate reason.
+    if (isProOnly(user, item)) throw new HttpError(402, 'Этот предмет доступен с подпиской PRO');
     if (user.xp < item.price) throw new HttpError(400, `Не хватает опыта: нужно ${item.price} XP`);
 
     user.xp -= item.price;
@@ -517,6 +556,11 @@ const routes = [
   ['POST', /^\/users\/pin$/, (ctx) => {
     const user = requireUser(ctx);
     if (!/^\d{4}$/.test(String(ctx.body.pin || ''))) throw new HttpError(400, 'PIN-код должен состоять из 4 цифр');
+    // Once a PIN exists, changing it requires the current one — mirrors the server.
+    if (user.pin) {
+      if (!ctx.body.currentPin) throw new HttpError(400, 'Введите текущий PIN-код');
+      if (user.pin !== String(ctx.body.currentPin)) throw new HttpError(400, 'Неверный текущий PIN-код');
+    }
     user.pin = String(ctx.body.pin);
     save();
     return { data: { success: true } };
@@ -529,8 +573,13 @@ const routes = [
     return { data: { success: true } };
   }],
 
+  // Current PIN arrives as a query parameter (?currentPin=1234), like the server.
   ['DELETE', /^\/users\/pin$/, (ctx) => {
     const user = requireUser(ctx);
+    if (!/^\d{4}$/.test(String(ctx.query.currentPin || ''))) throw new HttpError(400, 'PIN-код должен состоять из 4 цифр');
+    if (user.pin && user.pin !== String(ctx.query.currentPin)) {
+      throw new HttpError(400, 'Неверный текущий PIN-код');
+    }
     user.pin = null;
     save();
     return { data: { success: true } };

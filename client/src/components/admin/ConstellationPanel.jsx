@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pencil, Plus, Sparkles, Star, Trash2 } from 'lucide-react';
 
 import api, { errorMessage } from '../../lib/api';
+import { skills } from '../../lib/plural';
 import { Alert, Button, Field, Input, Modal, Textarea, cx } from '../ui';
 
 /**
@@ -162,7 +163,7 @@ export default function ConstellationPanel({ constellations, stars, selectedId, 
                       </span>
                       <span className="flex items-center gap-1 text-xs text-slate-400">
                         <Star size={11} aria-hidden="true" />
-                        {starCount(c.id)} навыков
+                        {skills(starCount(c.id))}
                       </span>
                     </span>
                   </button>

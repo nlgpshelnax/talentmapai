@@ -2,6 +2,7 @@
 
 const express = require('express');
 
+const config = require('../config');
 const { dbAll, dbGet } = require('../db');
 const { asyncHandler } = require('../middleware/error');
 const { requireAuth } = require('../middleware/auth');
@@ -77,18 +78,55 @@ router.get(
   '/summary',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const row = await dbGet(
-      `SELECT (SELECT COUNT(*) FROM user_progress WHERE user_id = ?) AS completed,
-              (SELECT COUNT(*) FROM stars)                            AS total,
-              (SELECT COUNT(*) FROM portfolio WHERE user_id = ?)      AS works`,
-      [req.user.id, req.user.id]
-    );
+    const unlocked = publicUser(req.user).recommendedGraphs;
+
+    // Прогресс всегда считается по открытым направлениям, а не по всему
+    // каталогу: иначе в шапке приложения и в отчёте родителя получались разные
+    // проценты для одного и того же момента.
+    const scopeSql = unlocked.length
+      ? `SELECT id FROM stars WHERE constellation_id IN (${unlocked.map(() => '?').join(',')})`
+      : 'SELECT id FROM stars';
+    const scopeParams = unlocked.length ? unlocked : [];
+
+    const [scopeStars, progress, works, catalogue, tempo, lastLog] = await Promise.all([
+      dbAll(scopeSql, scopeParams),
+      dbAll('SELECT star_id FROM user_progress WHERE user_id = ?', [req.user.id]),
+      dbGet('SELECT COUNT(*) AS n FROM portfolio WHERE user_id = ?', [req.user.id]),
+      dbGet('SELECT COUNT(*) AS n FROM stars'),
+      // Темп занятий. Родителю важнее «занимается ли сейчас», чем «сколько
+      // всего», а вычислять это на клиенте нельзя: обращение к часам во время
+      // рендера — нечистая операция (React 19 ловит её правилом purity).
+      dbGet(
+        `SELECT
+           SUM(CASE WHEN created_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) AS month,
+           SUM(CASE WHEN created_at >= datetime('now', '-7 days')  THEN 1 ELSE 0 END) AS week
+         FROM history_logs WHERE user_id = ? AND log_text LIKE '%шаг%'`,
+        [req.user.id]
+      ),
+      dbGet(
+        `SELECT CAST(julianday('now') - julianday(MAX(created_at)) AS INTEGER) AS days
+           FROM history_logs WHERE user_id = ?`,
+        [req.user.id]
+      ),
+    ]);
+
+    const scopeIds = new Set(scopeStars.map((s) => s.id));
+    const completedAll = progress.map((p) => p.star_id);
+    const completed = completedAll.filter((id) => scopeIds.has(id)).length;
+
     res.json({
-      completed: row.completed,
-      total: row.total,
-      works: row.works,
+      completed,
+      total: scopeIds.size,
+      percent: scopeIds.size ? Math.round((completed / scopeIds.size) * 100) : 0,
+      works: works.n,
       xp: req.user.xp_points || 0,
-      percent: row.total ? Math.round((row.completed / row.total) * 100) : 0,
+      // Родителю важно, сколько ребёнок заработал за всё время, а не сколько
+      // осталось на счету: потратив опыт в магазине, ребёнок обнулял баланс и
+      // в отчёте выглядел так, будто ничего не делал.
+      xpEarned: completedAll.length * config.gamification.xpPerStar,
+      catalogueTotal: catalogue.n,
+      pace: { month: tempo?.month || 0, week: tempo?.week || 0 },
+      daysSinceActivity: lastLog?.days == null ? null : Math.max(0, lastLog.days),
     });
   })
 );
