@@ -32,6 +32,7 @@ async function main() {
   await dbRun('PRAGMA foreign_keys = OFF');
   for (const table of TABLES) {
     if (keepUsers && table === 'users') continue;
+    if (!/^[a-z_][a-z0-9_]*$/i.test(table)) throw new Error(`Недопустимое имя таблицы: ${table}`);
     await dbRun(`DELETE FROM ${table}`);
   }
   await dbRun("DELETE FROM sqlite_sequence WHERE name IN ('" + TABLES.join("','") + "')");

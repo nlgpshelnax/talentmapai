@@ -8,6 +8,7 @@ const { dbGet } = require('../db');
 const { asyncHandler } = require('../middleware/error');
 const { requireAuth } = require('../middleware/auth');
 const { validate, z } = require('../middleware/validate');
+const { sanitizeForLLM } = require('../utils/sanitize');
 const { tutorReply, enabled } = require('../services/ai');
 
 const router = express.Router();
@@ -28,7 +29,11 @@ const chatSchema = z.object({
     .array(
       z.object({
         role: z.enum(['user', 'assistant']),
-        content: z.string().min(1).max(2000),
+        // Текст ребёнка уходит в языковую модель. Снимаем ролевые маркеры и
+        // ограждения кода, которыми пытаются переписать системную инструкцию,
+        // — но осторожно: фраза «хочу стать системным администратором» должна
+        // дойти до модели нетронутой.
+        content: z.string().min(1).max(4000).transform(sanitizeForLLM).pipe(z.string().min(1).max(2000)),
       })
     )
     .min(1)

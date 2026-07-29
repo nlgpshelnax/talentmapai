@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt');
 const { dbGet, dbRun } = require('../db');
 const { ApiError, asyncHandler } = require('../middleware/error');
 const { requireAuth } = require('../middleware/auth');
+const { limits } = require('../middleware/security');
+const lockout = require('../services/lockout');
 const { validate, z, fields } = require('../middleware/validate');
 const { publicUser } = require('../utils/serialize');
 
@@ -29,8 +31,8 @@ const profileSchema = z.object({
   role: z.enum(['parent', 'child']).optional(),
   age: fields.age.optional(),
   city: fields.city.optional(),
-  weeklyHours: z.string().trim().max(40).optional(),
-  avatar: z.string().trim().max(500).optional(),
+  weeklyHours: fields.plainText(40).optional(),
+  avatar: fields.plainText(500).optional(),
 });
 
 router.patch(
@@ -89,17 +91,48 @@ router.post(
   })
 );
 
+/**
+ * Проверка родительского PIN.
+ *
+ * Четыре цифры — это десять тысяч комбинаций. Скрипт переберёт их за минуты,
+ * если ничего не мешает, и ребёнок получит доступ к разделу, который от него
+ * закрыт. Ограничение по частоте здесь недостаточно: счётчик в памяти
+ * обнуляется перезапуском. Поэтому неудачи копятся в базе и привязаны к
+ * аккаунту.
+ */
 router.post(
   '/pin/verify',
   requireAuth,
+  limits.pin,
   validate(z.object({ pin: fields.pin })),
   asyncHandler(async (req, res) => {
+    const locked = await lockout.check(lockout.KIND.PIN, req.user.id);
+    if (locked) {
+      res.setHeader('Retry-After', String(locked.retryAfter));
+      throw new ApiError(
+        429,
+        `Слишком много попыток. Повторите через ${Math.ceil(locked.retryAfter / 60)} мин.`
+      );
+    }
+
     const row = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [req.user.id]);
     if (!row?.parent_pin) throw ApiError.badRequest('PIN-код ещё не установлен');
 
     const ok = await bcrypt.compare(req.body.pin, row.parent_pin);
-    if (!ok) throw ApiError.badRequest('Неверный PIN-код');
+    if (!ok) {
+      const state = await lockout.fail(lockout.KIND.PIN, req.user.id);
+      if (state.locked) {
+        res.setHeader('Retry-After', String(state.retryAfter));
+        throw new ApiError(429, 'Слишком много попыток ввода PIN-кода. Раздел временно заблокирован.');
+      }
+      throw ApiError.badRequest(
+        state.remaining <= 3
+          ? `Неверный PIN-код. Осталось попыток: ${state.remaining}`
+          : 'Неверный PIN-код'
+      );
+    }
 
+    await lockout.reset(lockout.KIND.PIN, req.user.id);
     res.json({ success: true });
   })
 );
@@ -110,12 +143,22 @@ router.post(
 router.delete(
   '/pin',
   requireAuth,
+  limits.pin,
   validate(z.object({ currentPin: fields.pin }), 'query'),
   asyncHandler(async (req, res) => {
+    const locked = await lockout.check(lockout.KIND.PIN, req.user.id);
+    if (locked) {
+      res.setHeader('Retry-After', String(locked.retryAfter));
+      throw new ApiError(429, 'Слишком много попыток. Повторите позже.');
+    }
+
     const row = await dbGet('SELECT parent_pin FROM users WHERE id = ?', [req.user.id]);
     if (row?.parent_pin) {
       const ok = await bcrypt.compare(req.query.currentPin, row.parent_pin);
-      if (!ok) throw ApiError.badRequest('Неверный текущий PIN-код');
+      if (!ok) {
+        await lockout.fail(lockout.KIND.PIN, req.user.id);
+        throw ApiError.badRequest('Неверный текущий PIN-код');
+      }
     }
     await dbRun('UPDATE users SET parent_pin = NULL WHERE id = ?', [req.user.id]);
     res.json({ success: true });

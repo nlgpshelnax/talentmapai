@@ -7,18 +7,37 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
 
 const config = require('./src/config');
 const { createSchema } = require('./src/db/schema');
 const { seedAll } = require('./src/db/seed');
 const { apiNotFound, errorHandler } = require('./src/middleware/error');
+const {
+  limits,
+  guardSlowConnections,
+  slowDown,
+  loadShedder,
+  blockScanners,
+  rejectOversized,
+  rejectHeaderFlood,
+} = require('./src/middleware/security');
+const lockout = require('./src/services/lockout');
 const { enabled: aiEnabled } = require('./src/services/ai');
 
 const app = express();
 
-app.set('trust proxy', 1);
+/**
+ * Доверие к заголовкам прокси включается только явно, через TRUST_PROXY.
+ *
+ * Безусловное доверие означало, что любой клиент подставляет в X-Forwarded-For
+ * что угодно и получает чистый счётчик ограничений на каждый запрос. То есть
+ * защиты от подбора пароля и наводнения запросами не было вовсе.
+ */
+app.set('trust proxy', config.trustProxy);
 app.disable('x-powered-by');
+// Заголовок ETag на ответах API выдаёт, изменились ли данные, даже когда сам
+// ответ закрыт авторизацией. Для статики он остаётся — там это полезно.
+app.set('etag', false);
 
 // ---------------------------------------------------------------- security
 
@@ -33,20 +52,47 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", 'https://smartcaptcha.yandexcloud.net'],
+        // Tailwind вставляет стили в разметку, поэтому inline-стили разрешены.
+        // Inline-скрипты — нет: это принципиальная разница, вся защита от
+        // внедрения кода держится именно на запрете script-src 'unsafe-inline'.
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+        // Раньше стояло `https:` — то есть картинку можно было подгрузить с
+        // любого сайта в интернете. Это канал утечки: адрес запроса за
+        // изображением уносит на чужой сервер реферер и факт визита.
+        imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'", 'https://smartcaptcha.yandexcloud.net'],
         frameSrc: ["'self'", 'https://smartcaptcha.yandexcloud.net'],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
+        formAction: ["'self'"],
+        // Запрет встраивания в чужой фрейм: без него страницу накрывают
+        // прозрачным слоем и заставляют ребёнка нажимать не то, что он видит.
+        frameAncestors: ["'none'"],
+        ...(config.isProd ? { upgradeInsecureRequests: [] } : {}),
       },
     },
+    // Полгода HSTS с поддоменами: браузер перестаёт даже пробовать http.
+    hsts: config.isProd ? { maxAge: 15552000, includeSubDomains: true, preload: false } : false,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
     crossOriginEmbedderPolicy: false,
     // Uploaded images are served to the SPA from the same origin.
     crossOriginResourcePolicy: { policy: 'same-site' },
   })
 );
+
+/**
+ * Порядок здесь важен: сначала самые дешёвые отказы.
+ *
+ * Сканеры и запросы с абсурдным объёмом отбрасываются до разбора тела,
+ * авторизации и обращений к базе — иначе каждый мусорный запрос стоит нам
+ * столько же, сколько настоящий.
+ */
+app.use(blockScanners);
+app.use(rejectHeaderFlood());
+app.use(rejectOversized());
+app.use(loadShedder());
 
 app.use(
   cors({
@@ -64,24 +110,33 @@ app.use(
 );
 
 app.use(compression());
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Тело запроса урезано с мегабайта до четверти: самый большой JSON в приложении
+// — это ответы диагностики, они не превышают нескольких килобайт. Файлы идут
+// отдельным путём через multer со своим ограничением.
+app.use(express.json({ limit: config.limits.jsonBodyBytes }));
+app.use(express.urlencoded({ extended: true, limit: config.limits.jsonBodyBytes }));
 
-/** Blanket API limiter; auth and AI routes add their own tighter caps. */
-app.use(
-  '/api',
-  rateLimit({
-    windowMs: 60 * 1000,
-    limit: config.isProd ? 200 : 2000,
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    message: { error: 'Слишком много запросов, попробуйте чуть позже' },
-  })
-);
+/**
+ * Общий потолок на API плюс плавное замедление.
+ *
+ * Замедление важнее жёсткого отказа: оно не сообщает атакующему точную границу
+ * и делает перебор бессмысленным по времени, почти не мешая человеку.
+ * Точечные ограничения по классам маршрутов навешены в самих маршрутах.
+ */
+app.use('/api', limits.global);
+app.use('/api', slowDown({ after: config.isProd ? 40 : 400 }));
 
 // ------------------------------------------------------------------ routes
 
+/**
+ * Проверка живости.
+ *
+ * На боевом сервере отвечает односложно: окружение, режим ИИ и время работы —
+ * это разведданные. По времени работы видно, когда последний раз обновлялись,
+ * то есть какие уязвимости могли остаться незакрытыми.
+ */
 app.get('/api/health', (req, res) => {
+  if (config.isProd) return res.json({ status: 'ok' });
   res.json({
     status: 'ok',
     env: config.env,
@@ -90,16 +145,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.use('/api/auth', require('./src/routes/auth'));
-app.use('/api/app-state', require('./src/routes/appState'));
-app.use('/api/diagnostics', require('./src/routes/diagnostics'));
-app.use('/api/progress', require('./src/routes/progress'));
-app.use('/api/portfolio', require('./src/routes/portfolio'));
-app.use('/api/store', require('./src/routes/store'));
-app.use('/api/venues', require('./src/routes/venues'));
-app.use('/api/users', require('./src/routes/users'));
+// Ограничения разведены по стоимости: чтение каталога и обращение к языковой
+// модели не должны стоить одинаково.
+app.use('/api/auth', limits.auth, require('./src/routes/auth'));
+app.use('/api/app-state', limits.read, require('./src/routes/appState'));
+app.use('/api/diagnostics', limits.write, require('./src/routes/diagnostics'));
+app.use('/api/progress', limits.write, require('./src/routes/progress'));
+app.use('/api/portfolio', limits.upload, require('./src/routes/portfolio'));
+app.use('/api/store', limits.write, require('./src/routes/store'));
+app.use('/api/venues', limits.read, require('./src/routes/venues'));
+app.use('/api/users', limits.write, require('./src/routes/users'));
 app.use('/api/ai', require('./src/routes/ai'));
-app.use('/api/admin', require('./src/routes/admin'));
+app.use('/api/admin', limits.admin, require('./src/routes/admin'));
 
 app.use('/api', apiNotFound);
 
@@ -113,6 +170,18 @@ app.use(
     immutable: true,
     index: false,
     dotfiles: 'deny',
+    setHeaders(res) {
+      /**
+       * Файл сюда попадает только после проверки сигнатуры, но защита строится
+       * слоями. Эти два заголовка означают: что бы ни лежало внутри, браузер
+       * обязан считать это вложением заданного типа и не пытаться угадать
+       * разметку. Без них старый браузер может отрисовать «картинку» как
+       * страницу — и она получит доступ к сеансу пользователя.
+       */
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    },
   })
 );
 
@@ -172,12 +241,43 @@ async function start() {
   await createSchema();
   await seedAll();
 
+  // Периодическая уборка счётчиков неудачных попыток.
+  const sweeper = setInterval(() => lockout.sweep().catch(() => {}), 60 * 60 * 1000);
+  sweeper.unref();
+
   const server = app.listen(config.port, () => {
     console.log(`\n  TalentMap AI — сервер запущен`);
     console.log(`  http://localhost:${config.port}`);
     console.log(`  окружение: ${config.env} · ИИ: ${aiEnabled() ? 'подключён' : 'демо-режим'}`);
     console.log(`  клиент: ${hasBuild ? 'собран' : 'НЕ собран — выполните npm run build'}\n`);
   });
+
+  /**
+   * Защита от медленных соединений.
+   *
+   * Классическая атака одним ноутбуком: открыть несколько сотен сокетов и
+   * отдавать заголовки по байту в секунду. Соединения не закрываются, пул
+   * исчерпан, сервер не отвечает никому — при том что трафика почти нет.
+   * Значения по умолчанию в Node для этого слишком щедрые.
+   */
+  server.headersTimeout = config.limits.headersTimeoutMs;
+  server.requestTimeout = config.limits.requestTimeoutMs;
+  server.keepAliveTimeout = config.limits.keepAliveTimeoutMs;
+  server.maxRequestsPerSocket = 400;
+
+  // Встроенных таймаутов недостаточно: клиент, подкидывающий по заголовку раз
+  // в несколько секунд, живёт бесконечно. Свой сторож считает срок от открытия
+  // соединения и не даёт растянуть запрос.
+  guardSlowConnections(server, {
+    headersMs: config.limits.headersTimeoutMs,
+    idleMs: config.limits.keepAliveTimeoutMs,
+  });
+
+  /**
+   * Потолок одновременных соединений. Лишним отказываем сразу на уровне сокета:
+   * это дешевле, чем принять соединение и захлебнуться на разборе запроса.
+   */
+  server.maxConnections = config.limits.maxConnections;
 
   const shutdown = (signal) => {
     console.log(`\n[${signal}] завершение работы…`);

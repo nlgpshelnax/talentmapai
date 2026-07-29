@@ -18,7 +18,9 @@
     "venues": "node scripts/build-venues.js",
     "test:links": "node tests/links.mjs",
     "demo:data": "node scripts/build-demo-data.js",
-    "demo:build": "npm run demo:data && npm --prefix client install && npm --prefix client run build"
+    "demo:build": "npm run demo:data && npm --prefix client install && npm --prefix client run build",
+    "audit": "node scripts/audit-gate.js",
+    "test:security": "node --test tests/security.test.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -36,5 +38,10 @@
   "devDependencies": {
     "playwright": "^1.62.0",
     "supertest": "^7.2.2"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "node-gyp": "^11.4.2",
+    "tar": "^7.5.2"
   }
 }

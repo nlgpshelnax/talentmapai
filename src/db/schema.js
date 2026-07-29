@@ -173,6 +173,22 @@ const TABLES = [
 
   `CREATE INDEX IF NOT EXISTS idx_venues_city ON venues(city)`,
 
+  /**
+   * Счётчик неудачных попыток входа и ввода родительского PIN.
+   *
+   * В памяти процесса такой счётчик бесполезен: он обнуляется при перезапуске,
+   * а подобрать пароль можно и в несколько заходов. В базе он переживает
+   * перезапуск и общий для всех копий приложения.
+   */
+  `CREATE TABLE IF NOT EXISTS login_attempts (
+     key          TEXT    PRIMARY KEY,
+     attempts     INTEGER NOT NULL DEFAULT 0,
+     first_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+     locked_until TEXT
+   )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_attempts_locked ON login_attempts(locked_until)`,
+
   `CREATE TABLE IF NOT EXISTS diagnostics_results (
      id         INTEGER PRIMARY KEY AUTOINCREMENT,
      user_id    INTEGER NOT NULL,
@@ -210,13 +226,29 @@ const COLUMN_MIGRATIONS = [
   ['constellations', 'icon', "TEXT NOT NULL DEFAULT '✨'"],
   ['constellations', 'sort_order', 'INTEGER NOT NULL DEFAULT 0'],
   ['stars', 'order_index', 'INTEGER NOT NULL DEFAULT 0'],
+  /**
+   * Поколение токенов. Увеличивается при смене пароля и при выходе «со всех
+   * устройств»; токен со старым номером перестаёт действовать немедленно.
+   * Без этого украденный токен жил бы до конца своего срока, даже если
+   * владелец уже сменил пароль.
+   */
+  ['users', 'token_version', 'INTEGER NOT NULL DEFAULT 0'],
 ];
 
 async function createSchema() {
   for (const ddl of TABLES) await dbRun(ddl);
   for (const ddl of INDEXES) await dbRun(ddl);
 
+  // Имена таблиц и колонок подставляются в SQL напрямую — параметры там
+  // синтаксически недопустимы. Значения берутся из константы выше, но проверка
+  // формы стоит копейки и защищает от опечатки, которая превратится в инъекцию,
+  // если список когда-нибудь начнут собирать из внешних данных.
+  const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/i;
+
   for (const [table, column, type] of COLUMN_MIGRATIONS) {
+    if (!SAFE_IDENTIFIER.test(table) || !SAFE_IDENTIFIER.test(column)) {
+      throw new Error(`Недопустимое имя в миграции: ${table}.${column}`);
+    }
     const cols = await dbAll(`PRAGMA table_info(${table})`);
     if (!cols.some((c) => c.name === column)) {
       await dbRun(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);

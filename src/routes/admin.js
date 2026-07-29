@@ -43,8 +43,8 @@ router.get(
 // --------------------------------------------------------- constellations
 
 const constellationSchema = z.object({
-  name: z.string().trim().min(2, 'Название от 2 символов').max(80),
-  description: z.string().trim().max(500).default(''),
+  name: fields.plainText(80, { min: 2, minMsg: 'Название от 2 символов' }),
+  description: fields.multilineText(500).default(''),
   x: z.coerce.number().int().min(-5000).max(10000).default(500),
   y: z.coerce.number().int().min(-5000).max(10000).default(300),
   stroke: z.string().trim().max(60).default('rgba(99,102,241,0.28)'),
@@ -116,9 +116,9 @@ const LEVELS = ['Низкий (Начальный)', 'Допустимый (Ба
 
 const starSchema = z.object({
   constellationId: z.coerce.number().int().positive(),
-  name: z.string().trim().min(2, 'Название от 2 символов').max(120),
+  name: fields.plainText(120, { min: 2, minMsg: 'Название от 2 символов' }),
   level: z.enum(LEVELS).default(LEVELS[0]),
-  description: z.string().trim().max(600).default(''),
+  description: fields.multilineText(600).default(''),
   x: z.coerce.number().int().min(-5000).max(10000).default(0),
   y: z.coerce.number().int().min(-5000).max(10000).default(0),
 });
@@ -251,10 +251,10 @@ router.delete(
 const resourceSchema = z.object({
   starId: z.coerce.number().int().positive(),
   type: z.enum(['offline', 'online', 'tool']),
-  title: z.string().trim().min(2).max(160),
-  detail1: z.string().trim().max(200).default(''),
-  detail2: z.string().trim().max(200).default(''),
-  link: fields.optionalUrl,
+  title: fields.plainText(160, { min: 2 }),
+  detail1: fields.plainText(200).default(''),
+  detail2: fields.plainText(200).default(''),
+  link: fields.safeHttpUrl,
   city: z.string().trim().max(80).default('Все города'),
 });
 

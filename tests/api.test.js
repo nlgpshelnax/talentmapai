@@ -1001,3 +1001,168 @@ test('каталог закрыт для неавторизованных', asyn
   const res = await request(app).get('/api/venues');
   assert.equal(res.status, 401);
 });
+
+/* ================================================================================
+ * ЗАГРУЗКА ИЗОБРАЖЕНИЙ: защита от вредоносных файлов (imageGuard)
+ * --------------------------------------------------------------------------------
+ * Прототип доверял присланному Content-Type и выводил расширение из него же,
+ * поэтому HTML/PHP-полиглот, замаскированный под image/png, спокойно ложился на
+ * диск и раздавался статикой. Теперь формат определяется по магическим байтам,
+ * сверяется с MIME и расширением, а размеры читаются из заголовков и проверяются
+ * на «бомбу». Блок добавлен в конец файла и не трогает существующие тесты.
+ * ============================================================================== */
+
+// Каталог, куда роутер кладёт загрузки в тестовом окружении (см. UPLOAD_DIR выше).
+const UPLOADS_DIR = path.join(TMP, 'uploads');
+
+/** Список файлов в каталоге загрузок (пусто, если каталога ещё нет). */
+const listUploads = () => (fs.existsSync(UPLOADS_DIR) ? fs.readdirSync(UPLOADS_DIR) : []);
+
+/** Настоящий крошечный PNG 1x1, собранный из байтов. */
+function tinyPngBuffer() {
+  return Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'
+  );
+}
+
+/** PNG с подменёнными width/height в чанке IHDR (для проверки защиты от бомбы). */
+function pngWithDimensions(width, height) {
+  const png = tinyPngBuffer();
+  png.writeUInt32BE(width, 16);
+  png.writeUInt32BE(height, 20);
+  return png;
+}
+
+/** Минимальный валидный JPEG заданного размера (SOI + APP0 + SOF0 + EOI). */
+function jpegBuffer(w = 2, h = 2) {
+  const soi = Buffer.from([0xff, 0xd8]);
+  const app0 = Buffer.from([
+    0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01,
+    0x00, 0x00,
+  ]);
+  const sof = Buffer.alloc(2 + 2 + 1 + 2 + 2 + 1 + 9);
+  let o = 0;
+  sof[o++] = 0xff;
+  sof[o++] = 0xc0;
+  sof.writeUInt16BE(17, o);
+  o += 2;
+  sof[o++] = 8;
+  sof.writeUInt16BE(h, o);
+  o += 2;
+  sof.writeUInt16BE(w, o);
+  o += 2;
+  sof[o++] = 3;
+  for (let c = 0; c < 3; c++) {
+    sof[o++] = c + 1;
+    sof[o++] = 0x11;
+    sof[o++] = 0;
+  }
+  return Buffer.concat([soi, app0, sof, Buffer.from([0xff, 0xd9])]);
+}
+
+/** POST /api/portfolio с приложенным файлом. */
+function uploadWork(buffer, { filename, contentType, title = 'Моя работа', token = demoToken }) {
+  return auth(request(app).post('/api/portfolio'), token)
+    .field('title', title)
+    .attach('image', buffer, { filename, contentType });
+}
+
+test('загрузка: настоящий PNG принимается, файл сохраняется с расширением .png', async () => {
+  const res = await uploadWork(tinyPngBuffer(), { filename: 'work.png', contentType: 'image/png' });
+  assert.equal(res.status, 201, `ожидали 201, тело: ${JSON.stringify(res.body)}`);
+  assert.ok(res.body.item, 'вернулся созданный элемент портфолио');
+  assert.match(res.body.item.image, /^\/uploads\/.+\.png$/, 'расширение выведено из содержимого');
+
+  // Файл действительно лежит на диске.
+  const savedName = path.basename(res.body.item.image);
+  assert.ok(listUploads().includes(savedName), 'сохранённый файл присутствует в каталоге загрузок');
+});
+
+test('загрузка: реальный PNG-файл из fixtures принимается', async () => {
+  const png = fs.readFileSync(path.join(__dirname, 'fixtures', 'tiny.png'));
+  const res = await uploadWork(png, { filename: 'fixture.png', contentType: 'image/png' });
+  assert.equal(res.status, 201);
+  assert.match(res.body.item.image, /\.png$/);
+});
+
+test('REGRESSION: HTML-полезная нагрузка под видом image/png отклоняется (ключевая уязвимость)', async () => {
+  // Именно так работал бы полиглот: клиент присылает Content-Type image/png,
+  // а внутри — HTML со скриптом. Раньше файл попадал на диск и раздавался.
+  const html = Buffer.from('<!DOCTYPE html>\n<script>alert(document.cookie)</script>');
+  const before = listUploads();
+
+  const res = await uploadWork(html, { filename: 'evil.png', contentType: 'image/png' });
+  assert.equal(res.status, 400, 'подделанный тип должен отклоняться');
+
+  // И ничего не осело на диске.
+  assert.deepEqual(listUploads(), before, 'отклонённый файл не остаётся на диске');
+});
+
+test('REGRESSION: .png с магическими байтами JPEG отклоняется', async () => {
+  // Расширение/MIME говорят PNG, но байты — JPEG: несоответствие содержимого.
+  const before = listUploads();
+  const res = await uploadWork(jpegBuffer(4, 4), { filename: 'fake.png', contentType: 'image/png' });
+  assert.equal(res.status, 400, 'несоответствие формата и содержимого отклоняется');
+  assert.deepEqual(listUploads(), before, 'мусор не остаётся на диске');
+});
+
+test('REGRESSION: PNG с IHDR 60000×60000 отклоняется как бомба', async () => {
+  const before = listUploads();
+  const res = await uploadWork(pngWithDimensions(60000, 60000), {
+    filename: 'bomb.png',
+    contentType: 'image/png',
+  });
+  assert.equal(res.status, 400, 'нереалистичные размеры должны отклоняться');
+  assert.deepEqual(listUploads(), before, 'бомба не остаётся на диске');
+});
+
+test('загрузка: файл-заглушка неизвестного формата отклоняется', async () => {
+  const before = listUploads();
+  const junk = Buffer.from('это просто текст, а не картинка вовсе');
+  const res = await uploadWork(junk, { filename: 'note.png', contentType: 'image/png' });
+  assert.equal(res.status, 400);
+  assert.deepEqual(listUploads(), before, 'не-изображение не остаётся на диске');
+});
+
+test('REGRESSION: отклонённая загрузка не оставляет файлов в каталоге uploads', async () => {
+  // Сводная проверка «отсутствия мусора»: несколько разных атак подряд, после
+  // каждой каталог загрузок не должен прирасти ни на один файл.
+  const before = listUploads().length;
+
+  const attacks = [
+    { buf: Buffer.from('<svg onload=alert(1)>'), filename: 'x.png', contentType: 'image/png' },
+    { buf: Buffer.from('<?php system($_GET[c]); ?>'), filename: 'x.gif', contentType: 'image/gif' },
+    { buf: jpegBuffer(2, 2), filename: 'x.png', contentType: 'image/png' }, // формат ≠ расширение
+    { buf: pngWithDimensions(20000, 10), filename: 'x.png', contentType: 'image/png' }, // сторона > 10000
+  ];
+
+  for (const a of attacks) {
+    const res = await uploadWork(a.buf, { filename: a.filename, contentType: a.contentType });
+    assert.equal(res.status, 400, `атака ${a.filename} должна быть отклонена`);
+  }
+
+  assert.equal(listUploads().length, before, 'ни одна отклонённая загрузка не осела на диске');
+});
+
+test('REGRESSION: провал валидации после записи файла не оставляет орфан на диске', async () => {
+  // Файл проходит проверку изображения, но название слишком короткое —
+  // валидное изображение всё равно нужно удалить, а не бросить на диске.
+  const before = listUploads().length;
+  const res = await uploadWork(tinyPngBuffer(), {
+    filename: 'ok.png',
+    contentType: 'image/png',
+    title: 'x', // < 2 символов → 400
+  });
+  assert.equal(res.status, 400, 'слишком короткое название отклоняется');
+  assert.equal(listUploads().length, before, 'валидный файл при ошибке валидации удаляется');
+});
+
+test('загрузка: файл больше лимита возвращает 413', async () => {
+  // Первый рубеж обороны — лимит размера multer (5 МБ). 6 МБ нулей достаточно.
+  const before = listUploads().length;
+  const big = Buffer.alloc(6 * 1024 * 1024, 0);
+  const res = await uploadWork(big, { filename: 'huge.png', contentType: 'image/png' });
+  assert.equal(res.status, 413, 'превышение размера должно давать 413');
+  assert.equal(listUploads().length, before, 'превышающий лимит файл не остаётся на диске');
+});

@@ -7,7 +7,8 @@ const rateLimit = require('express-rate-limit');
 const config = require('../config');
 const { dbRun, dbGet } = require('../db');
 const { ApiError, asyncHandler } = require('../middleware/error');
-const { requireAuth, signToken } = require('../middleware/auth');
+const { requireAuth, signToken, revokeSessions } = require('../middleware/auth');
+const lockout = require('../services/lockout');
 const { validate, z, fields } = require('../middleware/validate');
 const { publicUser } = require('../utils/serialize');
 
@@ -88,7 +89,7 @@ router.post(
       [lastID]
     );
 
-    res.status(201).json({ token: signToken(lastID), user: publicUser(user) });
+    res.status(201).json({ token: signToken(lastID, 0), user: publicUser(user) });
   })
 );
 
@@ -106,6 +107,23 @@ router.post(
   validate(loginSchema),
   asyncHandler(async (req, res) => {
     const { email, password, smartCaptchaToken } = req.body;
+
+    /**
+     * Блокировка привязана к почте, а не к адресу.
+     *
+     * Ограничение по частоте с привязкой к адресу обходится ботнетом или
+     * подменой заголовка прокси. Подбор пароля от конкретного ящика так не
+     * ускоришь: счётчик у цели атаки один, откуда бы ни пришёл запрос.
+     */
+    const locked = await lockout.check(lockout.KIND.LOGIN, email);
+    if (locked) {
+      res.setHeader('Retry-After', String(locked.retryAfter));
+      throw new ApiError(
+        429,
+        `Слишком много неудачных попыток входа. Повторите через ${Math.ceil(locked.retryAfter / 60)} мин.`
+      );
+    }
+
     await assertCaptcha(smartCaptchaToken, clientIp(req));
 
     const row = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
@@ -115,9 +133,23 @@ router.post(
     const hash = row?.password || '$2b$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv';
     const ok = await bcrypt.compare(password, hash);
 
-    if (!row || !ok) throw ApiError.badRequest('Неверный email или пароль');
+    if (!row || !ok) {
+      const state = await lockout.fail(lockout.KIND.LOGIN, email);
+      // Сообщение одинаковое для несуществующей почты и неверного пароля:
+      // подсказывать, какие ящики зарегистрированы, незачем.
+      if (state.locked) {
+        res.setHeader('Retry-After', String(state.retryAfter));
+        throw new ApiError(429, 'Слишком много неудачных попыток входа. Аккаунт временно заблокирован.');
+      }
+      throw ApiError.badRequest('Неверный email или пароль');
+    }
 
-    res.json({ token: signToken(row.id), user: publicUser({ ...row, has_pin: row.parent_pin ? 1 : 0 }) });
+    await lockout.reset(lockout.KIND.LOGIN, email);
+
+    res.json({
+      token: signToken(row.id, row.token_version ?? 0),
+      user: publicUser({ ...row, has_pin: row.parent_pin ? 1 : 0 }),
+    });
   })
 );
 
@@ -160,8 +192,18 @@ router.post(
 
     await dbRun('UPDATE users SET password = ? WHERE id = ?', [await bcrypt.hash(newPassword, 12), req.user.id]);
 
-    // Re-issue so the client keeps a fresh token after the credential change.
-    res.json({ success: true, token: signToken(req.user.id) });
+    /**
+     * Все ранее выданные токены перестают действовать.
+     *
+     * Смысл смены пароля — выгнать того, кто получил доступ. Раньше старые
+     * токены жили до конца срока, и смена пароля ничего не отнимала у
+     * захватчика. Текущему устройству сразу выдаём новый токен, чтобы человека
+     * не выбрасывало из собственного сеанса.
+     */
+    const version = await revokeSessions(req.user.id);
+    await lockout.reset(lockout.KIND.LOGIN, req.user.email);
+
+    res.json({ success: true, token: signToken(req.user.id, version) });
   })
 );
 
