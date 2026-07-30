@@ -676,6 +676,8 @@ const routes = [
         works: s.portfolio.length,
         completions: s.progress.length,
         cities: s.cities.length,
+        venues: (snapshot.venues || []).length,
+        venueCities: new Set((snapshot.venues || []).map((v) => v.city)).size,
         starsWithoutResources: g.stars.filter((st) => !g.resources.some((r) => r.starId === st.id)).length,
         cycle: null,
       },
@@ -745,17 +747,111 @@ const routes = [
     return { data: { success: true } };
   }],
 
+  /**
+   * Каталог площадок в демоверсии — только чтение.
+   *
+   * Панель администратора должна выглядеть и работать так же, как в полной
+   * версии: заказчик проходит по вкладкам и видит настоящие данные, поиск и
+   * фильтры. Изменения не сохраняются — они жили бы только в этом браузере.
+   */
+  ['GET', /^\/admin\/venues\/meta$/, (ctx) => {
+    requireAdmin(ctx);
+    const g = graph();
+    const venues = snapshot.venues || [];
+    return {
+      data: {
+        directions: g.constellations.map((c) => ({ key: c.key, name: c.name })),
+        cities: [...new Set(venues.map((v) => v.city))].sort((a, b) => a.localeCompare(b, 'ru')),
+        kinds: ['state', 'nonprofit', 'university', 'commercial'],
+        formats: ['offline', 'online', 'hybrid'],
+      },
+    };
+  }],
+
+  ['GET', /^\/admin\/venues$/, (ctx) => {
+    requireAdmin(ctx);
+    const all = snapshot.venues || [];
+    const q = String(ctx.query.q || '').trim().toLocaleLowerCase('ru');
+    const city = String(ctx.query.city || '').trim();
+    const direction = String(ctx.query.direction || '').trim();
+    const verified = ctx.query.verified;
+
+    // Поиск в JS, а не в базе: в полной версии там SQLite, у которого LIKE
+    // работает только с латиницей. Здесь повторяем то же поведение.
+    let rows = all.filter((v) => {
+      if (city && v.city !== city) return false;
+      if (direction && !v.directions.includes(direction)) return false;
+      if (verified === 'true' && !v.verified) return false;
+      if (verified === 'false' && v.verified) return false;
+      if (!q) return true;
+      return [v.name, v.org, v.address, v.city]
+        .some((f) => String(f || '').toLocaleLowerCase('ru').includes(q));
+    });
+
+    const page = Math.max(1, Number(ctx.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(ctx.query.pageSize) || 20));
+    const total = rows.length;
+    rows = rows.slice((page - 1) * pageSize, page * pageSize);
+
+    return { data: { venues: rows, total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)) } };
+  }],
+
+  ['GET', /^\/admin\/store$/, (ctx) => {
+    requireAdmin(ctx);
+    const s = getState();
+    const items = (snapshot.storeItems || []).map((i) => ({
+      ...i,
+      owners: s.purchases.filter((p) => p.itemId === i.id).length,
+    }));
+    return { data: { items, total: items.length } };
+  }],
+
+  ['GET', /^\/admin\/backup\/summary$/, (ctx) => {
+    requireAdmin(ctx);
+    const s = getState();
+    const g = graph();
+    const venues = snapshot.venues || [];
+    return {
+      data: {
+        constellations: g.constellations.length,
+        stars: g.stars.length,
+        edges: g.edges.length,
+        resources: g.resources.length,
+        venues: venues.length,
+        venueCities: new Set(venues.map((v) => v.city)).size,
+        storeItems: (snapshot.storeItems || []).length,
+        cities: s.cities.length,
+        users: s.users.length,
+        works: s.portfolio.length,
+        completions: s.progress.length,
+      },
+    };
+  }],
+
+  ['GET', /^\/admin\/backup\/export/, (ctx) => {
+    requireAdmin(ctx);
+    throw new HttpError(
+      403,
+      'В демоверсии выгрузка копии отключена: данные хранятся только в этом браузере. В полной версии копия скачивается одним нажатием.'
+    );
+  }],
+
   // Graph editing in the demo is intentionally read-only: changes would live
   // only in this visitor's browser and could leave the map in a confusing
   // state for a customer walkthrough.
-  ['POST', /^\/admin\/(constellations|stars|edges|resources)/, () => {
-    throw new HttpError(403, 'В демоверсии редактирование карты отключено. В полной версии эти действия доступны.');
+  ['POST', /^\/admin\/(constellations|stars|edges|resources|venues|store|users|backup)/, () => {
+    throw new HttpError(403, 'В демоверсии редактирование отключено. В полной версии эти действия доступны.');
   }],
   ['PUT', /^\/admin\//, () => {
-    throw new HttpError(403, 'В демоверсии редактирование карты отключено. В полной версии эти действия доступны.');
+    throw new HttpError(403, 'В демоверсии редактирование отключено. В полной версии эти действия доступны.');
   }],
-  ['DELETE', /^\/admin\/(constellations|stars|edges|resources)/, () => {
-    throw new HttpError(403, 'В демоверсии редактирование карты отключено. В полной версии эти действия доступны.');
+  ['DELETE', /^\/admin\/(constellations|stars|edges|resources|venues|store|users)/, () => {
+    throw new HttpError(403, 'В демоверсии редактирование отключено. В полной версии эти действия доступны.');
+  }],
+
+  // Изменение прав, подписки и сброс пароля — тоже только в полной версии.
+  ['PATCH', /^\/admin\//, () => {
+    throw new HttpError(403, 'В демоверсии редактирование отключено. В полной версии эти действия доступны.');
   }],
 
   ['GET', /^\/health$/, () => ({ data: { status: 'ok', env: 'demo', ai: 'offline' } })],
