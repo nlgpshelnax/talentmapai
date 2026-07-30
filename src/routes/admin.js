@@ -364,52 +364,6 @@ router.delete(
 /** Registered users list — the TZ asks for it and the prototype shipped a
  *  "в разработке" placeholder. Read-only, and never exposes password hashes. */
 router.get(
-  '/users',
-  asyncHandler(async (req, res) => {
-    const rows = await dbAll(
-      `SELECT u.id, u.name, u.email, u.age, u.city, u.role, u.xp_points,
-              u.subscription_status, u.is_admin, u.created_at,
-              (SELECT COUNT(*) FROM user_progress p WHERE p.user_id = u.id) AS completed,
-              (SELECT COUNT(*) FROM portfolio f WHERE f.user_id = u.id)     AS works
-         FROM users u
-        ORDER BY u.id DESC
-        LIMIT 1000`
-    );
-
-    // Filtering happens here rather than in SQL: SQLite's LIKE is ASCII-only,
-    // so `name LIKE '%соф%'` never matches «София» and Russian searches came
-    // back empty. JS toLowerCase handles Cyrillic correctly.
-    const q = String(req.query.q || '').trim().toLowerCase();
-    const filtered = q
-      ? rows.filter((u) =>
-          [u.name, u.email, u.city].some((v) => String(v || '').toLowerCase().includes(q))
-        )
-      : rows;
-
-    res.json({
-      users: filtered.slice(0, 200).map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        age: u.age,
-        city: u.city,
-        role: u.role,
-        xp: u.xp_points,
-        subscription: u.subscription_status,
-        isAdmin: Boolean(u.is_admin),
-        completed: u.completed,
-        works: u.works,
-        createdAt: u.created_at,
-        registered: formatRuDate(u.created_at),
-      })),
-      total: filtered.length,
-    });
-  })
-);
-
-// ------------------------------------------------------------------ stats
-
-router.get(
   '/stats',
   asyncHandler(async (req, res) => {
     const stats = await dbGet(`
@@ -438,5 +392,17 @@ router.get(
     });
   })
 );
+
+/**
+ * Разделы, вынесенные в отдельные файлы.
+ *
+ * Каждый наследует проверку прав от этого файла, но и сам её переприменяет:
+ * если кто-то однажды подключит такой роутер напрямую в server.js, он не
+ * окажется открытым для всех.
+ */
+router.use('/venues', require('./adminVenues'));
+router.use('/users', require('./adminUsers'));
+router.use('/store', require('./adminStore'));
+router.use('/backup', require('./adminBackup'));
 
 module.exports = router;

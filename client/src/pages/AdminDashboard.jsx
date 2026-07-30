@@ -4,10 +4,13 @@ import {
   AlertTriangle,
   ArrowLeft,
   BookOpen,
+  Building2,
+  Database as DatabaseIcon,
   FolderKanban,
   LogOut,
   Map as MapIcon,
   MapPin,
+  ShoppingBag,
   Sparkles,
   Star,
   Users as UsersIcon,
@@ -20,7 +23,10 @@ import { Alert, Button, Spinner, cx } from '../components/ui';
 import GraphCanvas from '../components/admin/GraphCanvas';
 import ConstellationPanel from '../components/admin/ConstellationPanel';
 import StarPanel from '../components/admin/StarPanel';
-import UsersTable from '../components/admin/UsersTable';
+import VenuesPanel from '../components/admin/VenuesPanel';
+import UsersPanel from '../components/admin/UsersPanel';
+import StorePanel from '../components/admin/StorePanel';
+import BackupPanel from '../components/admin/BackupPanel';
 import CitiesPanel from '../components/admin/CitiesPanel';
 
 /**
@@ -34,8 +40,11 @@ import CitiesPanel from '../components/admin/CitiesPanel';
 
 const TABS = [
   { id: 'graph', label: 'Карта навыков', icon: MapIcon },
+  { id: 'venues', label: 'Площадки', icon: Building2 },
+  { id: 'store', label: 'Магазин', icon: ShoppingBag },
   { id: 'cities', label: 'Города', icon: MapPin },
   { id: 'users', label: 'Пользователи', icon: UsersIcon },
+  { id: 'backup', label: 'Копии', icon: DatabaseIcon },
 ];
 
 export default function AdminDashboard() {
@@ -309,13 +318,25 @@ export default function AdminDashboard() {
               />
             </div>
           </div>
+        ) : tab === 'venues' ? (
+          <div id="panel-venues" role="tabpanel" aria-labelledby="tab-venues">
+            <VenuesPanel onChanged={reload} />
+          </div>
+        ) : tab === 'store' ? (
+          <div id="panel-store" role="tabpanel" aria-labelledby="tab-store">
+            <StorePanel />
+          </div>
         ) : tab === 'cities' ? (
           <div id="panel-cities" role="tabpanel" aria-labelledby="tab-cities">
             <CitiesPanel />
           </div>
+        ) : tab === 'backup' ? (
+          <div id="panel-backup" role="tabpanel" aria-labelledby="tab-backup">
+            <BackupPanel />
+          </div>
         ) : (
           <div id="panel-users" role="tabpanel" aria-labelledby="tab-users">
-            <UsersTable />
+            <UsersPanel />
           </div>
         )}
       </main>
